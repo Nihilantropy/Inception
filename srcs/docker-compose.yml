@@ -5,11 +5,14 @@ services:
     build:
       context: ./requirements/nginx
       dockerfile: Dockerfile
-    restart: always
     ports:
       - "8000:8000"
     networks:
       - proxy
+    depends_on:
+      - mariadb
+      - wordpress
+    restart: always
 
   mariadb:
     container_name: mariadb
@@ -18,11 +21,16 @@ services:
     env_file:
       - .env
     volumes:
-      - ./db-data:/var/lib/mysql
+      - db-data:/var/lib/mysql
     networks:
       - backend-db
+    restart: always
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "--silent"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     
-  # Backend users micro
   wordpress:
     container_name: wordpress
     env_file:
@@ -37,6 +45,12 @@ services:
       - proxy
     depends_on:
       - mariadb
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9000 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 # Networks configuration
 networks:
@@ -48,3 +62,4 @@ networks:
 # Volumes
 volumes:
   wp-data:
+  db-data:

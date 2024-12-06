@@ -2,22 +2,20 @@
 FROM alpine:3.19
 
 # Set environment variables
-ENV MARIADB_VERSION=10.6 \
-    MARIADB_DATA_DIR=/var/lib/mysql \
-    MYSQL_ROOT_PASSWORD=rootpassword \
-    MYSQL_DATABASE=wordpress \
-    MYSQL_USER=wordpress \
-    MYSQL_PASSWORD=wordpresspassword
+ENV MARIADB_DATA_DIR=/var/lib/mysql
 
 # Install MariaDB
 RUN apk update && apk add --no-cache \
     mariadb mariadb-client && \
     mkdir -p "$MARIADB_DATA_DIR" && \
-    chown -R mysql:mysql "$MARIADB_DATA_DIR"
+    chown -R mysql:mysql "$MARIADB_DATA_DIR" && \
+	mysql_install_db --user=mysql --datadir=/var/lib/mysql
+
+RUN mkdir -p /run/mysqld && chown -R mysql:mysql /run/mysqld
 
 # Configure MariaDB
 COPY ./conf/my.cnf /etc/my.cnf
-COPY ./initdb.d /docker-entrypoint-initdb.d
+COPY ./tools/init.sql /docker-entrypoint-initdb.d/init.sql
 
 # Expose the MariaDB port
 EXPOSE 3306
