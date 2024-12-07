@@ -6,7 +6,7 @@ services:
       context: ./requirements/nginx
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "443:443"
     networks:
       - proxy
     depends_on:
@@ -35,6 +35,7 @@ services:
     container_name: wordpress
     env_file:
       - .env
+      - ./requirements/wordpress/.env
     build:
       context: ./requirements/wordpress
       dockerfile: Dockerfile
@@ -46,11 +47,6 @@ services:
     depends_on:
       - mariadb
     restart: always
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9000 || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
 # Networks configuration
 networks:

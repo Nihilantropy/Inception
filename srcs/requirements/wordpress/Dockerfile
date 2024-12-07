@@ -1,10 +1,6 @@
 # Base image
 FROM alpine:3.19
 
-# Set environment variables
-ENV WORDPRESS_VERSION=6.7 \
-    WORDPRESS_PATH=/var/www/html
-
 # Install dependencies
 RUN apk update && apk add --no-cache \
     php81 \
@@ -19,15 +15,7 @@ RUN apk update && apk add --no-cache \
     php81-session \
 	php81-opcache \
     mariadb-client \
-    curl \
-    tar \
-    && mkdir -p $WORDPRESS_PATH
-
-RUN curl -o /tmp/wordpress.tar.gz https://wordpress.org/wordpress-${WORDPRESS_VERSION}.tar.gz && \
-    tar -xzf /tmp/wordpress.tar.gz -C /tmp && \
-    mv /tmp/wordpress/* $WORDPRESS_PATH && \
-    rm -rf /tmp/wordpress /tmp/wordpress.tar.gz && \
-    chown -R nobody:nogroup $WORDPRESS_PATH && chmod -R 755 $WORDPRESS_PATH
+    curl
 
 # Configure PHP-FPM
 RUN mkdir -p /run/php && \
@@ -40,9 +28,6 @@ RUN mkdir -p /run/php && \
 EXPOSE 9000
 
 # Add an entrypoint script
-COPY ./tools/entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/entrypoint.sh
+COPY ./tools/* /usr/local/bin/
+RUN chmod +x /usr/local/bin/entrypoint.sh && chmod +x /usr/local/bin/setup_db.sh
 ENTRYPOINT ["entrypoint.sh"]
-
-# Start PHP-FPM
-CMD ["php-fpm81", "-F"]
