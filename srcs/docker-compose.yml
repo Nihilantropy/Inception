@@ -46,6 +46,18 @@ services:
       - proxy
     depends_on:
       - mariadb
+      - redis
+    restart: always
+
+  redis:
+    container_name: redis
+    build:
+      context: ./requirements/redis
+      dockerfile: Dockerfile
+    volumes:
+      - wp-data:/data
+    networks:
+      - backend-db
     restart: always
 
 # Networks configuration

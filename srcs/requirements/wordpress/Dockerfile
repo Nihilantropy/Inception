@@ -1,7 +1,7 @@
 # Base image
 FROM alpine:3.19
 
-# Install dependencies
+# Install dependencies and utilities
 RUN apk update && apk add --no-cache \
     php81 \
     php81-fpm \
@@ -13,21 +13,31 @@ RUN apk update && apk add --no-cache \
     php81-mbstring \
     php81-xml \
     php81-session \
-	php81-opcache \
+    php81-opcache \
+    php81-phar \
     mariadb-client \
-    curl
+    curl \
+    bash \
+    && ln -s /usr/bin/php81 /usr/bin/php
 
-# Configure PHP-FPM
-RUN mkdir -p /run/php && \
-    sed -i 's|^;daemonize = yes|daemonize = no|' /etc/php81/php-fpm.conf && \
-    sed -i 's|^listen = 127.0.0.1:9000|listen = /run/php/php-fpm.sock|' /etc/php81/php-fpm.d/www.conf && \
-    sed -i 's|^;listen.owner = nobody|listen.owner = nobody|' /etc/php81/php-fpm.d/www.conf && \
-    sed -i 's|^;listen.group = nobody|listen.group = nogroup|' /etc/php81/php-fpm.d/www.conf && \
-    sed -i 's|^;listen.mode = 0660|listen.mode = 0660|' /etc/php81/php-fpm.d/www.conf
-
-EXPOSE 9000
+# Create the www-data user and add it to the existing www-data group
+RUN adduser -S -G www-data www-data
 
 # Add an entrypoint script
-COPY ./tools/* /usr/local/bin/
+COPY ./tools/entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY ./tools/setup_db.sh /usr/local/bin/setup_db.sh
+
+# Set up the WordPress directory and permissions
+RUN mkdir -p /var/www/html
+
+# Copy WordPress configuration file
+COPY ./conf/wp-config.php /var/www/html/wp-config.php
+
+# Ensure scripts are executable
 RUN chmod +x /usr/local/bin/entrypoint.sh && chmod +x /usr/local/bin/setup_db.sh
-ENTRYPOINT ["entrypoint.sh"]
+
+# Expose the PHP-FPM port
+EXPOSE 9000
+
+# Set the entrypoint for the container
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

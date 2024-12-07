@@ -1,20 +1,6 @@
 #!/bin/sh
 set -e
 
-# Ensure wp-config.php is configured
-if [ ! -f "$WORDPRESS_PATH/wp-config.php" ]; then
-  echo "Configuring wp-config.php..."
-  cp "$WORDPRESS_PATH/wp-config-sample.php" "$WORDPRESS_PATH/wp-config.php"
-  sed -i "s/database_name_here/$WORDPRESS_DB_NAME/" "$WORDPRESS_PATH/wp-config.php"
-  sed -i "s/username_here/$WORDPRESS_DB_USER/" "$WORDPRESS_PATH/wp-config.php"
-  sed -i "s/password_here/$WORDPRESS_DB_PASSWORD/" "$WORDPRESS_PATH/wp-config.php"
-  sed -i "s/localhost/$WORDPRESS_DB_HOST/" "$WORDPRESS_PATH/wp-config.php"
-
-  # Set DB_CHARSET and DB_COLLATE if needed
-  sed -i "s/define('DB_CHARSET', 'utf8mb4');/define('DB_CHARSET', 'utf8');/" "$WORDPRESS_PATH/wp-config.php"
-  sed -i "s/define('DB_COLLATE', '');/define('DB_COLLATE', 'utf8_general_ci');/" "$WORDPRESS_PATH/wp-config.php"
-fi
-
 # Wait for the database to be ready
 echo "Waiting for MariaDB to be ready..."
 until mysqladmin ping -h "$WORDPRESS_DB_HOST" -P "$MYSQL_PORT" --silent; do
