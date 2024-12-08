@@ -6,6 +6,7 @@ services:
       context: ./requirements/nginx
       dockerfile: Dockerfile
     ports:
+      - "80:80"
       - "443:443"
     networks:
       - proxy
