@@ -6,7 +6,6 @@ services:
       context: ./requirements/nginx
       dockerfile: Dockerfile
     ports:
-      - "80:80"
       - "443:443"
     networks:
       - proxy
@@ -50,6 +49,8 @@ services:
       - redis
     restart: always
 
+  ### BONUS ###
+
   redis:
     container_name: redis
     build:
@@ -59,6 +60,24 @@ services:
       - wp-data:/data
     networks:
       - backend-db
+    restart: always
+
+  gatsby-app:
+    container_name: gatsby-app
+    build: 
+      context: ./requirements/gatsby-app
+      dockerfile: Dockerfile
+    networks:
+      - proxy
+    restart: always
+
+  alien-eggs:
+    container_name: alien-eggs
+    build:
+      context: ./requirements/alien-eggs
+      dockerfile: Dockerfile
+    networks:
+      - proxy
     restart: always
 
 # Networks configuration
