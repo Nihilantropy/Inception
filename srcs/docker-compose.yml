@@ -5,6 +5,8 @@ services:
     build:
       context: ./requirements/nginx
       dockerfile: Dockerfile
+    env_file:
+      - ./requirements/nginx/.env
     ports:
       - "443:443"
     networks:
@@ -57,9 +59,26 @@ services:
       context: ./requirements/redis
       dockerfile: Dockerfile
     volumes:
-      - wp-data:/data
+      - wp-data:/var/www/html
     networks:
       - backend-db
+    restart: always
+
+  ftp:
+    container_name: ftp
+    build:
+      context: ./requirements/ftp
+      dockerfile: Dockerfile
+    env_file:
+      - ./requirements/ftp/.env
+    ports:
+      - "20:20"
+      - "21:21"
+      - "21100-21110:21100-21110"
+    volumes:
+      - wp-data:/home/ftpusers/ftpuser
+    networks:
+      - proxy
     restart: always
 
   gatsby-app:
@@ -90,4 +109,15 @@ networks:
 # Volumes
 volumes:
   wp-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /home/crea/data/
+      o: bind
+
   db-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /home/crea/data/
+      o: bind

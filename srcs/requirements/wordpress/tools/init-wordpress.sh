@@ -22,7 +22,7 @@ wp core install \
     --skip-email \
     --allow-root
 
-chown -R www-data:www-data /var/www/html &&\
+chown -R ftpuser:ftpusers /var/www/html &&\
 chmod 755 /var/www/html
 
 # Create an additional user
