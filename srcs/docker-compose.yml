@@ -56,7 +56,7 @@ services:
   adminer:
     container_name: adminer
     build:
-      context: ./requirements/adminer
+      context: ./requirements/bonus/adminer
       dockerfile: Dockerfile
     env_file:
       - .env
@@ -70,7 +70,7 @@ services:
   redis:
     container_name: redis
     build:
-      context: ./requirements/redis
+      context: ./requirements/bonus/redis
       dockerfile: Dockerfile
     volumes:
       - wp-data:/var/www/html
@@ -81,10 +81,10 @@ services:
   ftp:
     container_name: ftp
     build:
-      context: ./requirements/ftp
+      context: ./requirements/bonus/ftp
       dockerfile: Dockerfile
     env_file:
-      - ./requirements/ftp/.env
+      - ./requirements/bonus/ftp/.env
     ports:
       - "20:20"
       - "21:21"
@@ -98,7 +98,7 @@ services:
   gatsby-app:
     container_name: gatsby-app
     build: 
-      context: ./requirements/gatsby-app
+      context: ./requirements/bonus/gatsby-app
       dockerfile: Dockerfile
     networks:
       - proxy
@@ -107,8 +107,28 @@ services:
   alien-eggs:
     container_name: alien-eggs
     build:
-      context: ./requirements/alien-eggs
+      context: ./requirements/bonus/alien-eggs
       dockerfile: Dockerfile
+    networks:
+      - proxy
+    restart: on-failure
+
+  prometheus:
+    container_name: prometheus
+    build:
+      context: ./requirements/bonus/prometheus
+      dockerfile: Dockerfile
+    networks:
+      - proxy
+    restart: on-failure
+
+  grafana:
+    container_name: grafana
+    build:
+      context: ./requirements/bonus/grafana
+      dockerfile: Dockerfile
+    env_file:
+      - ./requirements/bonus/grafana/.env
     networks:
       - proxy
     restart: on-failure
