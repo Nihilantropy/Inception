@@ -14,7 +14,7 @@ services:
     depends_on:
       - mariadb
       - wordpress
-    restart: always
+    restart: on-failure
 
   mariadb:
     container_name: mariadb
@@ -26,7 +26,7 @@ services:
       - db-data:/var/lib/mysql
     networks:
       - backend-db
-    restart: always
+    restart: on-failure
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "--silent"]
       interval: 30s
@@ -49,9 +49,23 @@ services:
     depends_on:
       - mariadb
       - redis
-    restart: always
+    restart: on-failure
 
   ### BONUS ###
+
+  adminer:
+    container_name: adminer
+    build:
+      context: ./requirements/adminer
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    networks:
+      - backend-db
+      - proxy
+    restart: on-failure
+    depends_on:
+      - mariadb
 
   redis:
     container_name: redis
@@ -62,7 +76,7 @@ services:
       - wp-data:/var/www/html
     networks:
       - backend-db
-    restart: always
+    restart: on-failure
 
   ftp:
     container_name: ftp
@@ -76,10 +90,10 @@ services:
       - "21:21"
       - "21100-21110:21100-21110"
     volumes:
-      - wp-data:/home/ftpusers/ftpuser
+      - wp-data:/var/www/html
     networks:
       - proxy
-    restart: always
+    restart: on-failure
 
   gatsby-app:
     container_name: gatsby-app
@@ -88,7 +102,7 @@ services:
       dockerfile: Dockerfile
     networks:
       - proxy
-    restart: always
+    restart: on-failure
 
   alien-eggs:
     container_name: alien-eggs
@@ -97,7 +111,7 @@ services:
       dockerfile: Dockerfile
     networks:
       - proxy
-    restart: always
+    restart: on-failure
 
 # Networks configuration
 networks:

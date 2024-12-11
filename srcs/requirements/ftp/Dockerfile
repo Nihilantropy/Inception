@@ -12,7 +12,7 @@ RUN mkdir -p /home/ftpusers && \
     echo "ftpuser:password" | chpasswd
 
 # Set permissions for the shared volume
-RUN chown -R ftpuser:ftpusers /home/ftpusers/ftpuser
+RUN chown -R ftpuser:ftpusers /var/www/html
 
 # Copy the vsftpd configuration file
 COPY ./conf/vsftpd.conf /etc/vsftpd/vsftpd.conf
