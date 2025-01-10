@@ -1,0 +1,26 @@
+{
+	"dashboard": {
+	  "title": "AlienEggs Metrics",
+	  "panels": [
+		{
+		  "title": "HTTP Requests",
+		  "type": "graph",
+		  "targets": [
+			{
+			  "expr": "rate(http_requests_total[5m])",
+			  "legendFormat": "requests/sec"
+			}
+		  ]
+		},
+		{
+		  "title": "Active Requests",
+		  "type": "gauge",
+		  "targets": [
+			{
+			  "expr": "active_http_requests"
+			}
+		  ]
+		}
+	  ]
+	}
+  }

@@ -47,3 +47,19 @@ images:
 	@echo "Building images..."
 	@docker-compose -f $(COMPOSE_FILE) build --parallel
 	@echo "Images build done!"
+
+setup_monitoring: generate_certs setup_grafana_dirs
+
+generate_certs:
+	@echo "Generating certificates for Prometheus..."
+	@mkdir -p ./srcs/requirements/prometheus/certs
+	@openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+		-keyout ./srcs/requirements/prometheus/certs/prometheus.key \
+		-out ./srcs/requirements/prometheus/certs/prometheus.crt \
+		-subj "/C=IT/ST=Rome/L=Rome/O=42/OU=42/CN=prometheus.crea.42.fr"
+
+setup_grafana_dirs:
+	@echo "Setting up Grafana directories..."
+	@mkdir -p ./srcs/requirements/grafana/dashboards
+	@mkdir -p ./srcs/requirements/grafana/conf/provisioning/dashboards
+	@mkdir -p ./srcs/requirements/grafana/conf/provisioning/datasources

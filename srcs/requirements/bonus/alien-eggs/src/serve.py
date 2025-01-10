@@ -38,6 +38,10 @@ def shell_open(url):
 # Prometheus metrics
 REQUEST_COUNT = Counter("http_requests_total", "Total HTTP requests served")
 ACTIVE_REQUESTS = Gauge("active_http_requests", "Number of active HTTP requests")
+GAME_STARTS = Counter('game_starts_total', 'Total number of game starts')
+GAME_COMPLETION = Counter('game_completions_total', 'Total number of game completions')
+PLAYER_SCORE = Histogram('player_score', 'Distribution of player scores',
+    buckets=[10, 20, 50, 100, 200, 500, 1000])
 
 class MetricsRequestHandler(CORSRequestHandler):
     def do_GET(self):

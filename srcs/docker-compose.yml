@@ -116,28 +116,50 @@ services:
   prometheus:
     container_name: prometheus
     build:
-      context: ./requirements/bonus/prometheus
+      context: ./requirements/prometheus
       dockerfile: Dockerfile
+    volumes:
+      - prometheus-data:/prometheus/data
     networks:
+      - monitoring
       - proxy
     restart: on-failure
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   grafana:
     container_name: grafana
     build:
-      context: ./requirements/bonus/grafana
+      context: ./requirements/grafana
       dockerfile: Dockerfile
-    env_file:
-      - ./requirements/bonus/grafana/.env
+    volumes:
+      - grafana-data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
     networks:
+      - monitoring
       - proxy
+    depends_on:
+      - prometheus
     restart: on-failure
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 # Networks configuration
 networks:
   backend-db:
     driver: bridge
   proxy:
+    driver: bridge
+  monitoring:
     driver: bridge
 
 # Volumes
@@ -154,4 +176,17 @@ volumes:
     driver_opts:
       type: none
       device: /home/crea/data/
+      o: bind
+
+  prometheus-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /home/crea/data/prometheus
+      o: bind
+  grafana-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /home/crea/data/grafana
       o: bind
