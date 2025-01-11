@@ -23,8 +23,12 @@ RUN apk update && apk add --no-cache \
 # Create the www-data user and add it to the existing www-data group
 RUN adduser -S -G www-data www-data
 
-# Add an all the tools scripts
+# Ensure the WordPress directory exists
+RUN mkdir -p /var/www/html && \
+	chown -R www-data:www-data /var/www/html && \
+	chmod -R 755 /var/www/html
 
+# Copy all the necessary scripts
 COPY ./tools/init-wp-config.sh /usr/local/bin/init-wp-config.sh 
 COPY ./tools/init-wordpress.sh /usr/local/bin/init-wordpress.sh 
 COPY ./tools/setup_db.sh /usr/local/bin/setup_db.sh

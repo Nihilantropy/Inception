@@ -8,7 +8,7 @@ import subprocess
 import sys
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
-from prometheus_client import start_http_server, Counter, Gauge
+from prometheus_client import start_http_server, Counter, Gauge, Histogram
 
 # See cpython GH-17851 and GH-17864.
 class DualStackServer(HTTPServer):

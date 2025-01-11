@@ -2,11 +2,12 @@ services:
 
   nginx:
     container_name: nginx
+    image: nginx
     build:
       context: ./requirements/nginx
       dockerfile: Dockerfile
     env_file:
-      - ./requirements/nginx/.env
+      - .env
     ports:
       - "443:443"
     networks:
@@ -14,10 +15,26 @@ services:
     depends_on:
       - mariadb
       - wordpress
+      - ftp
+      - redis
+      # - adminer
+      # - gatsby-app
+      # - alien-eggs
+      # - prometheus
+      # - grafana
+    volumes:
+      - wp-data:/var/www/html
     restart: on-failure
+    healthcheck:
+      test: ["CMD", "curl", "-k", "--fail", "https://localhost:443"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   mariadb:
     container_name: mariadb
+    image: mariadb
     build:
       context: ./requirements/mariadb
     env_file:
@@ -28,16 +45,17 @@ services:
       - backend-db
     restart: on-failure
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "--silent"]
-      interval: 30s
-      timeout: 10s
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
       retries: 5
+      start_period: 30s
     
   wordpress:
     container_name: wordpress
+    image: wordpress
     env_file:
       - .env
-      - ./requirements/wordpress/.env
     build:
       context: ./requirements/wordpress
       dockerfile: Dockerfile
@@ -50,11 +68,18 @@ services:
       - mariadb
       - redis
     restart: on-failure
+    healthcheck:
+      test: ["CMD", "php-fpm81", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   ### BONUS ###
 
   adminer:
     container_name: adminer
+    image: adminer
     build:
       context: ./requirements/bonus/adminer
       dockerfile: Dockerfile
@@ -66,9 +91,16 @@ services:
     restart: on-failure
     depends_on:
       - mariadb
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/adminer.php"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   redis:
     container_name: redis
+    image: redis
     build:
       context: ./requirements/bonus/redis
       dockerfile: Dockerfile
@@ -77,14 +109,21 @@ services:
     networks:
       - backend-db
     restart: on-failure
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   ftp:
     container_name: ftp
+    image: ftp
     build:
       context: ./requirements/bonus/ftp
       dockerfile: Dockerfile
     env_file:
-      - ./requirements/bonus/ftp/.env
+      - .env
     ports:
       - "20:20"
       - "21:21"
@@ -94,30 +133,53 @@ services:
     networks:
       - proxy
     restart: on-failure
+    healthcheck:
+      test: ["CMD", "netstat", "-ln", "|", "grep", ":21"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   gatsby-app:
     container_name: gatsby-app
+    image: gatsby-app
     build: 
       context: ./requirements/bonus/gatsby-app
       dockerfile: Dockerfile
     networks:
       - proxy
     restart: on-failure
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 45s
 
   alien-eggs:
     container_name: alien-eggs
+    image: alien-eggs
     build:
       context: ./requirements/bonus/alien-eggs
       dockerfile: Dockerfile
     networks:
       - proxy
     restart: on-failure
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8060"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   prometheus:
     container_name: prometheus
+    image: prometheus
     build:
-      context: ./requirements/prometheus
+      context: ./requirements/bonus/prometheus
       dockerfile: Dockerfile
+    env_file:
+      - .env
     volumes:
       - prometheus-data:/prometheus/data
     networks:
@@ -125,22 +187,22 @@ services:
       - proxy
     restart: on-failure
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "https://localhost:9090/-/healthy"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 30s
 
   grafana:
     container_name: grafana
+    image: grafana
     build:
-      context: ./requirements/grafana
+      context: ./requirements/bonus/grafana
       dockerfile: Dockerfile
+    env_file:
+      - .env
     volumes:
       - grafana-data:/var/lib/grafana
-    environment:
-      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
-      - GF_USERS_ALLOW_SIGN_UP=false
     networks:
       - monitoring
       - proxy
@@ -152,6 +214,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 30s
 
 # Networks configuration
 networks:
@@ -168,25 +231,26 @@ volumes:
     driver: local
     driver_opts:
       type: none
-      device: /home/crea/data/
+      device: ${HOME}/data/wordpress
       o: bind
 
   db-data:
     driver: local
     driver_opts:
       type: none
-      device: /home/crea/data/
+      device: ${HOME}/data/mariadb
       o: bind
 
   prometheus-data:
     driver: local
     driver_opts:
       type: none
-      device: /home/crea/data/prometheus
+      device: ${HOME}/data/prometheus
       o: bind
+      
   grafana-data:
     driver: local
     driver_opts:
       type: none
-      device: /home/crea/data/grafana
+      device: ${HOME}/data/grafana
       o: bind

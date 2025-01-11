@@ -1,9 +1,10 @@
 FROM alpine:3.19
 
 # Install Python and dependencies
-RUN apk update && apk add python3 py3-pip
-
-RUN pip install prometheus-client
+RUN apk update && apk add --no-cache \
+    python3 \
+    py3-pip \
+    py3-prometheus-client
 
 # Copy the application files into the container
 COPY . .

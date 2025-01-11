@@ -10,7 +10,3 @@ datasources:
     editable: true
     jsonData:
       timeInterval: "5s"
-      queryTimeout: "30s"
-      httpMethod: "POST"
-    secureJsonData:
-      httpHeaderValue1: "Bearer ${PROMETHEUS_PASSWORD}"
