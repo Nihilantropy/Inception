@@ -1,21 +1,40 @@
 FROM alpine:3.19
 
-# Install necessary utilities
+# Install necessary packages
 RUN apk update && \
     apk add --no-cache \
         vsftpd \
-        openrc \
         shadow \
-        bash
+        linux-pam \
+        bash \
+        netcat-openbsd \
+        logrotate && \
+    rm -rf /var/cache/apk/*
 
-# Copy the init script into the container
-COPY /tools/init.sh /usr/local/bin/init.sh
+# Create necessary directories
+RUN mkdir -p /var/log && \
+    mkdir -p /etc/vsftpd && \
+    mkdir -p /var/run/vsftpd
 
-# Make the script executable
+# Configure logrotate for vsftpd logs
+COPY <<EOF /etc/logrotate.d/vsftpd
+/var/log/vsftpd.log {
+    daily
+    rotate 7
+    missingok
+    notifempty
+    compress
+    create 644 root root
+}
+EOF
+
+# Copy the init script
+COPY tools/init.sh /usr/local/bin/init.sh
 RUN chmod +x /usr/local/bin/init.sh
 
-# Expose FTP port
-EXPOSE 21
+WORKDIR /var/www/html
 
-# Entry point to run the init script and start vsftpd
-CMD ["init.sh"]
+# Expose FTP ports
+EXPOSE 20 21 21100-21110
+
+ENTRYPOINT ["/usr/local/bin/init.sh"]

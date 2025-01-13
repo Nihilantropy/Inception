@@ -53,67 +53,80 @@ http {
 
         location / {
             try_files \$uri \$uri/ /index.php?\$args;
+            
+            # Add proper MIME types
+            include /etc/nginx/mime.types;
+            default_type application/octet-stream;
+            
+            # Configure static file caching
+            location ~* \.(css|js|jpg|jpeg|png|gif|ico|woff|woff2|ttf|svg)$ {
+                expires 30d;
+                access_log off;
+                add_header Cache-Control "public, no-transform";
+            }
         }
 
-        # PHP-FPM routing
-        location ~ \.php$ { 
-            include fastcgi_params;
+        location ~ \.php$ {
+            fastcgi_split_path_info ^(.+\.php)(/.+)$;
             fastcgi_pass wordpress:9000;
             fastcgi_index index.php;
+            include fastcgi_params;
             fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
+            fastcgi_param PATH_INFO \$fastcgi_path_info;
+            fastcgi_read_timeout 300;
         }
 
-        # # Route for Gatsby App
-        # location /gatsby-app/ {
-        #     proxy_pass http://gatsby-app:3000;
-        #     proxy_http_version 1.1;
-        #     proxy_set_header Upgrade \$http_upgrade;
-        #     proxy_set_header Connection 'upgrade';
-        #     proxy_set_header Host \$host;
-        #     proxy_cache_bypass \$http_upgrade;
-        # }
+        # Route for Gatsby App
+        location /gatsby-app/ {
+            proxy_pass http://gatsby-app:3000;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade \$http_upgrade;
+            proxy_set_header Connection 'upgrade';
+            proxy_set_header Host \$host;
+            proxy_cache_bypass \$http_upgrade;
+        }
 
-        # # Route for AlienEggs App
-        # location /alien-eggs/ {
-        #     proxy_pass http://alien-eggs:8060/AlienEggs.html;
-        #     proxy_http_version 1.1;
-        #     proxy_set_header Upgrade \$http_upgrade;
-        #     proxy_set_header Connection 'upgrade';
-        #     proxy_set_header Host \$host;
-        #     proxy_cache_bypass \$http_upgrade;
-        # }
+        # Route for AlienEggs App
+        location /alien-eggs/ {
+            proxy_pass http://alien-eggs:8060/AlienEggs.html;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade \$http_upgrade;
+            proxy_set_header Connection 'upgrade';
+            proxy_set_header Host \$host;
+            proxy_cache_bypass \$http_upgrade;
+        }
 
-        # # Route for adminer
-        # location /adminer/ {
-        #     proxy_pass http://adminer:8080/;
-        #     proxy_http_version 1.1;
-        #     proxy_set_header Upgrade \$http_upgrade;
-        #     proxy_set_header Connection 'upgrade';
-        #     proxy_set_header Host \$host;
-        #     proxy_cache_bypass \$http_upgrade;
-        # }
+        # Route for adminer
+        location /adminer/ {
+            proxy_pass http://adminer:8080/;
+            proxy_http_version 1.1;
+            proxy_set_header Host \$host;
+            proxy_set_header X-Real-IP \$remote_addr;
+            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto \$scheme;
+        }
 
-        # location /prometheus/ {
-        #     proxy_pass http://prometheus:9090/;
-        #     proxy_http_version 1.1;
-        #     proxy_set_header Upgrade \$http_upgrade;
-        #     proxy_set_header Connection 'upgrade';
-        #     proxy_set_header Host \$host;
-        #     proxy_cache_bypass \$http_upgrade;
+        location /prometheus/ {
+            proxy_pass http://prometheus:9090/;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade \$http_upgrade;
+            proxy_set_header Connection 'upgrade';
+            proxy_set_header Host \$host;
+            proxy_cache_bypass \$http_upgrade;
             
-        #     # Basic auth for security
-        #     auth_basic "Prometheus";
-        #     auth_basic_user_file /etc/nginx/.htpasswd;
-        # }
+            # Basic auth for security
+            auth_basic "Prometheus";
+            auth_basic_user_file /etc/nginx/.htpasswd;
+        }
 
-        # location /grafana/ {
-        #     proxy_pass http://grafana:3000/;
-        #     proxy_http_version 1.1;
-        #     proxy_set_header Upgrade \$http_upgrade;
-        #     proxy_set_header Connection 'upgrade';
-        #     proxy_set_header Host \$host;
-        #     proxy_cache_bypass \$http_upgrade;
-        # }
+        location /grafana/ {
+            proxy_pass http://grafana:3000/;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade \$http_upgrade;
+            proxy_set_header Connection 'upgrade';
+            proxy_set_header Host \$host;
+            proxy_cache_bypass \$http_upgrade;
+        }
     }
 }
 EOF

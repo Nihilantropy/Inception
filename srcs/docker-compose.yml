@@ -92,7 +92,7 @@ services:
     depends_on:
       - mariadb
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/adminer.php"]
+      test: ["CMD", "wget", "--no-verbose", "--spider", "http://localhost:8080/"]
       interval: 30s
       timeout: 10s
       retries: 3
