@@ -3,6 +3,8 @@ FROM alpine:3.19
 RUN apk add --no-cache \
 		nginx \
 		openssl \
+		apache2-utils \
+		curl \
 		shadow
 
 RUN mkdir -p /var/www/html && \

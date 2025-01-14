@@ -1,4 +1,3 @@
-# prometheus.yml
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
@@ -8,6 +7,8 @@ scrape_configs:
   - job_name: 'prometheus'
     scheme: https
     tls_config:
+      cert_file: /etc/prometheus/certs/prometheus.crt
+      key_file: /etc/prometheus/certs/prometheus.key
       insecure_skip_verify: true
     basic_auth:
       username: admin
@@ -15,19 +16,9 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
-  - job_name: 'wordpress'
-    static_configs:
-      - targets: ['wordpress:9000']
-
-  - job_name: 'nginx'
-    static_configs:
-      - targets: ['nginx:443']
-    scheme: https
-    tls_config:
-      insecure_skip_verify: true
-
   - job_name: 'alien-eggs'
     metrics_path: '/metrics'
+    scheme: http
     static_configs:
       - targets: ['alien-eggs:8000']
     metric_relabel_configs:

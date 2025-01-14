@@ -31,7 +31,7 @@ RUN chown -R prometheus:prometheus /etc/prometheus && \
     chown -R prometheus:prometheus /prometheus && \
     chmod -R 775 /prometheus/data && \
     chmod g+rwx /prometheus/data && \
-    chmod +x /prometheus/prometheus  # Ensure prometheus binary is executable
+    chmod +x /prometheus/prometheus
 
 # Copy the configuration files
 COPY --chown=prometheus:prometheus ./conf/prometheus.yml /etc/prometheus/

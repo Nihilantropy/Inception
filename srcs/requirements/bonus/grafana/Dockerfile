@@ -5,6 +5,7 @@ RUN apk update && apk add --no-cache \
     grafana \
     bash \
     curl \
+	wget \
     libc6-compat
 
 # Create necessary directories with correct permissions

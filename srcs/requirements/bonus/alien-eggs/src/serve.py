@@ -56,29 +56,24 @@ class MetricsRequestHandler(CORSRequestHandler):
 
 
 def serve(root, port, metrics_port, run_browser):
-    os.chdir(root)
+    # Move directory change here
+    os.chdir(os.path.abspath(root))
 
+    # Bind to all interfaces explicitly
     address = ("0.0.0.0", port)
     httpd = DualStackServer(address, MetricsRequestHandler)
 
-    # Start the Prometheus metrics server
-    start_http_server(metrics_port)
-    print(f"Prometheus metrics available at: http://127.0.0.1:{metrics_port}/metrics")
+    # Start the Prometheus metrics server on all interfaces
+    start_http_server(metrics_port, addr='0.0.0.0')
+    print(f"Prometheus metrics available at: http://0.0.0.0:{metrics_port}/metrics")
 
-    url = f"http://127.0.0.1:{port}"
-    if run_browser:
-        # Open the served page in the user's default browser.
-        print(f"Opening the served URL in the default browser (use `--no-browser` or `-n` to disable this): {url}")
-        shell_open(url)
-    else:
-        print(f"Serving at: {url}")
+    print(f"Serving application at: http://0.0.0.0:{port}")
 
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
         print("\nKeyboard interrupt received, stopping server.")
     finally:
-        # Clean-up server
         httpd.server_close()
 
 

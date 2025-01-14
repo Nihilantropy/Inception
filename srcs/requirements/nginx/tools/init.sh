@@ -13,6 +13,12 @@ if [ ! -f "${SSL_CERTIFICATE_KEY}" ] || [ ! -f "${SSL_CERTIFICATE}" ]; then
     echo "Certificates generated!"
 fi
 
+
+# Saving prometheus password in the .htpasswd file
+echo "Saving prometheus password..."
+htpasswd -bc /etc/nginx/.htpasswd admin "${PROMETHEUS_PASSWORD}"
+echo "Prometheus password saved!"
+
 echo "Creating nginx.conf file..."
 cat << EOF > /etc/nginx/nginx.conf
 events {
@@ -87,14 +93,17 @@ http {
         }
 
         # Route for AlienEggs App
-        location /alien-eggs/ {
-            proxy_pass http://alien-eggs:8060/AlienEggs.html;
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade \$http_upgrade;
-            proxy_set_header Connection 'upgrade';
-            proxy_set_header Host \$host;
-            proxy_cache_bypass \$http_upgrade;
-        }
+		location /alien-eggs/ {
+			proxy_pass http://alien-eggs:8060/;
+			proxy_http_version 1.1;
+			proxy_set_header Upgrade \$http_upgrade;
+			proxy_set_header Connection 'upgrade';
+			proxy_set_header Host \$host;
+			proxy_cache_bypass \$http_proxy;
+
+			# Add this rewrite rule to serve AlienEggs.html by default
+			rewrite ^/alien-eggs/?$ /alien-eggs/AlienEggs.html permanent;
+		}
 
         # Route for adminer
         location /adminer/ {
@@ -106,18 +115,30 @@ http {
             proxy_set_header X-Forwarded-Proto \$scheme;
         }
 
-        location /prometheus/ {
-            proxy_pass http://prometheus:9090/;
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade \$http_upgrade;
-            proxy_set_header Connection 'upgrade';
-            proxy_set_header Host \$host;
-            proxy_cache_bypass \$http_upgrade;
-            
-            # Basic auth for security
-            auth_basic "Prometheus";
-            auth_basic_user_file /etc/nginx/.htpasswd;
-        }
+		location /prometheus/ {
+			proxy_pass https://prometheus:9090/;
+			proxy_http_version 1.1;
+			proxy_set_header Upgrade \$http_upgrade;
+			proxy_set_header Connection 'upgrade';
+			proxy_set_header Host \$host;
+			proxy_cache_bypass \$http_upgrade;
+			
+			# SSL verification settings
+			proxy_ssl_verify off;  # Since we're using self-signed certs
+			proxy_ssl_session_reuse on;
+			
+			# Basic auth for security
+			auth_basic "Prometheus";
+			auth_basic_user_file /etc/nginx/.htpasswd;
+
+			# Rewrite URLs to include /prometheus prefix
+			sub_filter 'href="/' 'href="/prometheus/';
+			sub_filter 'src="/' 'src="/prometheus/';
+			sub_filter '/-/static/' '/prometheus/-/static/';
+			sub_filter '/-/alerts' '/prometheus/-/alerts';
+			sub_filter_once off;
+			proxy_set_header Accept-Encoding "";
+		}
 
         location /grafana/ {
             proxy_pass http://grafana:3000/;
@@ -126,6 +147,13 @@ http {
             proxy_set_header Connection 'upgrade';
             proxy_set_header Host \$host;
             proxy_cache_bypass \$http_upgrade;
+
+			# Rewrite to handle Grafana running under /grafana
+			sub_filter '/public/' '/grafana/public/';
+			sub_filter '/login' '/grafana/login';
+			sub_filter '/logout' '/grafana/logout';
+			sub_filter_once off;
+			proxy_set_header Accept-Encoding "";
         }
     }
 }

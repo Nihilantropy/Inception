@@ -17,16 +17,16 @@ services:
       - wordpress
       - ftp
       - redis
-      # - adminer
-      # - gatsby-app
-      # - alien-eggs
-      # - prometheus
-      # - grafana
+      - adminer
+      - gatsby-app
+      - alien-eggs
+      - prometheus
+      - grafana
     volumes:
       - wp-data:/var/www/html
     restart: on-failure
     healthcheck:
-      test: ["CMD", "curl", "-k", "--fail", "https://localhost:443"]
+      test: ["CMD", "nginx", "-t"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -166,11 +166,11 @@ services:
       - proxy
     restart: on-failure
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8060"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:8060"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 30s
+      start_period: 45s
 
   prometheus:
     container_name: prometheus
@@ -187,11 +187,20 @@ services:
       - proxy
     restart: on-failure
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "https://localhost:9090/-/healthy"]
+      test: 
+        - "CMD"
+        - "wget"
+        - "--no-verbose"
+        - "--spider"
+        - "--no-check-certificate"
+        - "--auth-no-challenge"
+        - "--user=admin"
+        - "--password=${PROMETHEUS_PASSWORD}"
+        - "https://127.0.0.1:9090/-/healthy"
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 30s
+      start_period: 45s
 
   grafana:
     container_name: grafana
@@ -210,11 +219,11 @@ services:
       - prometheus
     restart: on-failure
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/api/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 30s
+      start_period: 120s
 
 # Networks configuration
 networks:
