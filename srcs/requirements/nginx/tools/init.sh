@@ -148,18 +148,22 @@ http {
 
         location /grafana/ {
             proxy_pass http://grafana:3000/;
+			
+            # Essential proxy headers
+            proxy_set_header Host \$host;
+            proxy_set_header X-Real-IP \$remote_addr;
+            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto \$scheme;
+            
+            # Websocket support
             proxy_http_version 1.1;
             proxy_set_header Upgrade \$http_upgrade;
-            proxy_set_header Connection 'upgrade';
-            proxy_set_header Host \$host;
-            proxy_cache_bypass \$http_upgrade;
-
-            # Rewrite to handle Grafana running under /grafana
-            sub_filter '/public/' '/grafana/public/';
-            sub_filter '/login' '/grafana/login';
-            sub_filter '/logout' '/grafana/logout';
-            sub_filter_once off;
-            proxy_set_header Accept-Encoding "";
+            proxy_set_header Connection "upgrade";
+            
+            # Timeouts
+            proxy_connect_timeout 60s;
+            proxy_send_timeout 60s;
+            proxy_read_timeout 60s;
         }
     }
 }
