@@ -8,7 +8,9 @@ RUN apk add --no-cache \
     openssl \
     python3 \
     py3-bcrypt \
-    shadow
+    shadow \
+    curl \
+    netcat-openbsd
 
 # Create prometheus user and group first
 RUN addgroup -S prometheus && \
@@ -23,8 +25,7 @@ RUN wget https://github.com/prometheus/prometheus/releases/download/v3.0.1/prome
 
 # Create necessary directories
 RUN mkdir -p /etc/prometheus \
-    /prometheus/data \
-    /etc/prometheus/certs
+    /prometheus/data
 
 # Set permissions
 RUN chown -R prometheus:prometheus /etc/prometheus && \
@@ -34,7 +35,9 @@ RUN chown -R prometheus:prometheus /etc/prometheus && \
     chmod +x /prometheus/prometheus
 
 # Copy the configuration files
-COPY --chown=prometheus:prometheus ./conf/prometheus.yml /etc/prometheus/
+COPY --chown=prometheus:prometheus ./tools/test.sh /test.sh
+RUN chmod +x /test.sh
+
 
 # Copy the initialization script
 COPY --chown=root:root ./tools/init.sh /init.sh

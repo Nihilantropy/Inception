@@ -37,7 +37,3 @@ fi
 
 # Cleanup
 rm -f test.txt
-
-# Print logs
-echo "\nFTP Server Logs:"
-docker exec ftp cat /var/log/vsftpd.log

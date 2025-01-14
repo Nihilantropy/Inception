@@ -1,25 +1,32 @@
 #!/bin/sh
+set -e
 
-echo "Creating folder for nginx certs"
+echo "=== Starting Nginx Initialization ==="
+
+echo "1. Creating directory structure..."
+echo "- Creating certificates directory"
 mkdir -p /etc/nginx/certs
+echo "- Creating log directory"
+mkdir -p /var/log/nginx
+echo "- Creating web root directory"
+mkdir -p /var/www/html
+echo "- Creating runtime directory"
+mkdir -p /run/nginx
+echo "✅ All directories created successfully"
 
-# Generate certificates if they don't exist
+echo "2. Setting up SSL certificates..."
 if [ ! -f "${SSL_CERTIFICATE_KEY}" ] || [ ! -f "${SSL_CERTIFICATE}" ]; then
-    echo "Generating certification for Nginx..."
+    echo "- Certificates not found, generating new ones..."
     openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
         -keyout "${SSL_CERTIFICATE_KEY}" \
         -out "${SSL_CERTIFICATE}" \
-        -subj "/C=IT/ST=Rome/L=Rome/O=WP/OU=WP/CN=${DOMAIN_NAME}" &&
-    echo "Certificates generated!"
+        -subj "/C=IT/ST=Rome/L=Rome/O=WP/OU=WP/CN=${DOMAIN_NAME}"
+    echo "✅ SSL certificates generated successfully"
+else
+    echo "✅ Using existing SSL certificates"
 fi
 
-
-# Saving prometheus password in the .htpasswd file
-echo "Saving prometheus password..."
-htpasswd -bc /etc/nginx/.htpasswd admin "${PROMETHEUS_PASSWORD}"
-echo "Prometheus password saved!"
-
-echo "Creating nginx.conf file..."
+echo "3. Generating nginx.conf..."
 cat << EOF > /etc/nginx/nginx.conf
 events {
     # Basic events configuration
@@ -32,9 +39,9 @@ http {
     default_type application/octet-stream;
 
     # Custom log format
-	log_format custom_logs '\$remote_addr - \$remote_user [\$time_local] '
-							'"\$request" \$status \$body_bytes_sent '
-							'"\$http_referer" "\$http_user_agent" "\$request_body"';
+    log_format custom_logs '\$remote_addr - \$remote_user [\$time_local] '
+                            '"\$request" \$status \$body_bytes_sent '
+                            '"\$http_referer" "\$http_user_agent" "\$request_body"';
 
     access_log /var/log/nginx/access.log custom_logs;
 
@@ -93,17 +100,17 @@ http {
         }
 
         # Route for AlienEggs App
-		location /alien-eggs/ {
-			proxy_pass http://alien-eggs:8060/;
-			proxy_http_version 1.1;
-			proxy_set_header Upgrade \$http_upgrade;
-			proxy_set_header Connection 'upgrade';
-			proxy_set_header Host \$host;
-			proxy_cache_bypass \$http_proxy;
+        location /alien-eggs/ {
+            proxy_pass http://alien-eggs:8060/;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade \$http_upgrade;
+            proxy_set_header Connection 'upgrade';
+            proxy_set_header Host \$host;
+            proxy_cache_bypass \$http_proxy;
 
-			# Add this rewrite rule to serve AlienEggs.html by default
-			rewrite ^/alien-eggs/?$ /alien-eggs/AlienEggs.html permanent;
-		}
+            # Add this rewrite rule to serve AlienEggs.html by default
+            rewrite ^/alien-eggs/?$ /alien-eggs/AlienEggs.html permanent;
+        }
 
         # Route for adminer
         location /adminer/ {
@@ -115,30 +122,29 @@ http {
             proxy_set_header X-Forwarded-Proto \$scheme;
         }
 
-		location /prometheus/ {
-			proxy_pass https://prometheus:9090/;
-			proxy_http_version 1.1;
-			proxy_set_header Upgrade \$http_upgrade;
-			proxy_set_header Connection 'upgrade';
-			proxy_set_header Host \$host;
-			proxy_cache_bypass \$http_upgrade;
-			
-			# SSL verification settings
-			proxy_ssl_verify off;  # Since we're using self-signed certs
-			proxy_ssl_session_reuse on;
-			
-			# Basic auth for security
-			auth_basic "Prometheus";
-			auth_basic_user_file /etc/nginx/.htpasswd;
-
-			# Rewrite URLs to include /prometheus prefix
-			sub_filter 'href="/' 'href="/prometheus/';
-			sub_filter 'src="/' 'src="/prometheus/';
-			sub_filter '/-/static/' '/prometheus/-/static/';
-			sub_filter '/-/alerts' '/prometheus/-/alerts';
-			sub_filter_once off;
-			proxy_set_header Accept-Encoding "";
-		}
+        location /prometheus/ {
+            # Direct proxy to prometheus
+            proxy_pass http://prometheus:9090/;
+            
+            # Essential proxy headers
+            proxy_set_header Host \$host;
+            proxy_set_header X-Real-IP \$remote_addr;
+            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto \$scheme;
+            
+            # Websocket support
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade \$http_upgrade;
+            proxy_set_header Connection "upgrade";
+            
+            # Timeouts
+            proxy_connect_timeout 60s;
+            proxy_send_timeout 60s;
+            proxy_read_timeout 60s;
+            
+            # Debug headers
+            add_header X-Debug-Message "Proxying to Prometheus" always;
+        }
 
         location /grafana/ {
             proxy_pass http://grafana:3000/;
@@ -148,23 +154,38 @@ http {
             proxy_set_header Host \$host;
             proxy_cache_bypass \$http_upgrade;
 
-			# Rewrite to handle Grafana running under /grafana
-			sub_filter '/public/' '/grafana/public/';
-			sub_filter '/login' '/grafana/login';
-			sub_filter '/logout' '/grafana/logout';
-			sub_filter_once off;
-			proxy_set_header Accept-Encoding "";
+            # Rewrite to handle Grafana running under /grafana
+            sub_filter '/public/' '/grafana/public/';
+            sub_filter '/login' '/grafana/login';
+            sub_filter '/logout' '/grafana/logout';
+            sub_filter_once off;
+            proxy_set_header Accept-Encoding "";
         }
     }
 }
 EOF
-echo "nginx.conf file created successfully!"
+echo "✅ nginx.conf created successfully"
 
-# Create necessary directories for nginx
-mkdir -p /var/log/nginx
-mkdir -p /var/www/html
-mkdir -p /run/nginx
+echo "4. Verifying configuration..."
+if [ ! -f "/etc/nginx/nginx.conf" ]; then
+    echo "❌ ERROR: nginx.conf not found!"
+    exit 1
+fi
+if [ ! -f "${SSL_CERTIFICATE}" ] || [ ! -f "${SSL_CERTIFICATE_KEY}" ]; then
+    echo "❌ ERROR: SSL certificates not found!"
+    exit 1
+fi
+echo "✅ All configurations verified"
+
+echo "5. Testing nginx configuration..."
+nginx -t
+if [ $? -ne 0 ]; then
+    echo "❌ ERROR: Nginx configuration test failed!"
+    exit 1
+fi
+echo "✅ Nginx configuration test passed"
+
+echo "=== Initialization complete. Starting Nginx... ==="
 
 # Start Nginx
-echo "Starting nginx..."
 exec nginx -g "daemon off;"

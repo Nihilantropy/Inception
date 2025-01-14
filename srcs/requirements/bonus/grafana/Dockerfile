@@ -1,32 +1,28 @@
+# Base image
 FROM alpine:3.19
 
-# Add necessary repositories and install Grafana
+# Install necessary packages
 RUN apk update && apk add --no-cache \
     grafana \
     bash \
     curl \
-	wget \
+    wget \
     libc6-compat
 
-# Create necessary directories with correct permissions
-RUN mkdir -p /etc/grafana/provisioning/datasources \
-    /etc/grafana/provisioning/dashboards \
+# Create necessary base directories
+RUN mkdir -p /etc/grafana \
     /var/lib/grafana \
-    /var/lib/grafana/dashboards
+    /var/log/grafana
 
-# Set correct permissions
-RUN chown -R grafana:grafana /var/lib/grafana /etc/grafana
+# Copy the initialization script
+COPY tools/init.sh /init.sh
+RUN chmod +x /init.sh
 
-# Copy configuration files
-COPY --chown=grafana:grafana ./conf/grafana.ini /etc/grafana/
-COPY --chown=grafana:grafana ./conf/provisioning/datasources/prometheus.yml /etc/grafana/provisioning/datasources/
-COPY --chown=grafana:grafana ./conf/provisioning/dashboards/dashboard.yml /etc/grafana/provisioning/dashboards/
-COPY --chown=grafana:grafana ./dashboards/alien_eggs.json /var/lib/grafana/dashboards/
+# Copy the dashboard JSON
+COPY dashboards/alien_eggs.json /var/lib/grafana/dashboards/
 
-# Environment variables
-ENV GF_PATHS_CONFIG=/etc/grafana/grafana.ini \
-    GF_PATHS_DATA=/var/lib/grafana \
-    GF_PATHS_LOGS=/var/log/grafana
+# Set permissions for grafana user
+RUN chown -R grafana:grafana /etc/grafana /var/lib/grafana /var/log/grafana /init.sh
 
 # Expose the Grafana port
 EXPOSE 3000
@@ -34,7 +30,5 @@ EXPOSE 3000
 # Switch to grafana user
 USER grafana
 
-# Start Grafana
-CMD ["grafana-server", \
-     "--config=/etc/grafana/grafana.ini", \
-     "--homepath=/usr/share/grafana"]
+# Start using initialization script
+ENTRYPOINT ["/init.sh"]

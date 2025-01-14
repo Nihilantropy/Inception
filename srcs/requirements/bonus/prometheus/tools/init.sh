@@ -1,29 +1,9 @@
 #!/bin/sh
 set -e
 
-# Ensure necessary directories exist
-mkdir -p /prometheus/data /etc/prometheus/certs
-chown -R prometheus:prometheus /prometheus/data
-chmod -R 775 /prometheus/data
+echo "=== Starting Prometheus Initialization ==="
 
-# Generate SSL certificates if they don't exist
-if [ ! -f "/etc/prometheus/certs/prometheus.key" ] || [ ! -f "/etc/prometheus/certs/prometheus.crt" ]; then
-    echo "Generating SSL certificates for Prometheus..."
-    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-        -keyout /etc/prometheus/certs/prometheus.key \
-        -out /etc/prometheus/certs/prometheus.crt \
-        -subj "/C=IT/ST=Rome/L=Rome/O=42/OU=42/CN=${DOMAIN_NAME}" \
-        -addext "subjectAltName = DNS:${DOMAIN_NAME},DNS:prometheus"
-    
-    # Set proper permissions for SSL certificates
-    chown prometheus:prometheus /etc/prometheus/certs/prometheus.crt
-    chown prometheus:prometheus /etc/prometheus/certs/prometheus.key
-    chmod 644 /etc/prometheus/certs/prometheus.crt
-    chmod 600 /etc/prometheus/certs/prometheus.key
-fi
-
-# Generate web config with basic auth and TLS
-echo "Generating web configuration..."
+echo "1. Generating password hash..."
 HASHED_PASSWORD=$(python3 -c "
 import bcrypt, sys
 try:
@@ -35,31 +15,81 @@ except Exception as e:
 ")
 
 if [ $? -ne 0 ]; then
-    echo "Failed to generate password hash"
+    echo "❌ ERROR: Failed to generate password hash"
     exit 1
 fi
+echo "✅ Password hash generated successfully"
 
-# Create web.yml with TLS and basic auth configuration
+echo "2. Creating web.yml configuration..."
 cat > /etc/prometheus/web.yml << EOF
-tls_server_config:
-  cert_file: /etc/prometheus/certs/prometheus.crt
-  key_file: /etc/prometheus/certs/prometheus.key
-  min_version: TLS12
-
+# Basic authentication
 basic_auth_users:
   admin: ${HASHED_PASSWORD}
+
+# Other settings as needed
 EOF
+echo "✅ web.yml created successfully at /etc/prometheus/web.yml"
 
-chown prometheus:prometheus /etc/prometheus/web.yml
-chmod 644 /etc/prometheus/web.yml
+echo "3. Creating prometheus.yml configuration..."
+cat > /etc/prometheus/prometheus.yml << EOF
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
 
-echo "Starting Prometheus with secure configuration..."
+scrape_configs:
+  - job_name: 'prometheus'
+    basic_auth:
+      username: 'admin'
+      password: '${PROMETHEUS_PASSWORD}'
+    metrics_path: '/metrics'
+    scheme: 'http'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'alien-eggs'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['alien-eggs:8000']
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: '(http_requests_total|active_http_requests)'
+        action: keep
+EOF
+echo "✅ prometheus.yml created successfully at /etc/prometheus/prometheus.yml"
+
+echo "4. Verifying configurations..."
+if [ ! -f "/etc/prometheus/web.yml" ]; then
+    echo "❌ ERROR: web.yml not found!"
+    exit 1
+fi
+if [ ! -f "/etc/prometheus/prometheus.yml" ]; then
+    echo "❌ ERROR: prometheus.yml not found!"
+    exit 1
+fi
+echo "✅ All configuration files verified"
+
+echo "5. Checking directory permissions..."
+if [ ! -w "/prometheus/data" ]; then
+    echo "❌ ERROR: Data directory is not writable!"
+    exit 1
+fi
+echo "✅ Directory permissions verified"
+
+echo "=== Initialization complete. Starting Prometheus... ==="
+echo "Starting with configuration:"
+echo "- Config file: /etc/prometheus/prometheus.yml"
+echo "- Storage path: /prometheus/data"
+echo "- Web config: /etc/prometheus/web.yml"
+echo "- Listen address: :9090"
+echo "- External URL: https://${DOMAIN_NAME}/prometheus/"
+echo "- Route prefix: /"
+
+# Start Prometheus with validated configuration
 exec /prometheus/prometheus \
     --config.file=/etc/prometheus/prometheus.yml \
     --storage.tsdb.path=/prometheus/data \
     --web.config.file=/etc/prometheus/web.yml \
     --web.listen-address=:9090 \
-	--web.external-url=https://crea.42.it/prometheus/ \
-    --web.enable-lifecycle \
-    --web.enable-admin-api \
-    --storage.tsdb.retention.time=15d
+    --web.external-url=https://${DOMAIN_NAME}/prometheus/ \
+    --web.route-prefix=/

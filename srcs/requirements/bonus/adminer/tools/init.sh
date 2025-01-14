@@ -1,20 +1,31 @@
 #!/bin/sh
 set -e
 
-# Download and set up Adminer if not already present
+echo "=== Starting Adminer Initialization ==="
+
+echo "1. Setting up Adminer..."
 if [ ! -f "/var/www/html/index.php" ]; then
-    echo "Downloading Adminer..."
+    echo "- Downloading latest version of Adminer..."
     cd /var/www/html
-    wget "http://www.adminer.org/latest.php" -O index.php
-    chown -R www-data:www-data /var/www/html
-    chmod 775 index.php
+    if wget "http://www.adminer.org/latest.php" -O index.php; then
+        echo "- Setting proper ownership..."
+        chown -R www-data:www-data /var/www/html
+        echo "- Setting file permissions..."
+        chmod 775 index.php
+        echo "✅ Adminer downloaded and configured successfully"
+    else
+        echo "❌ ERROR: Failed to download Adminer!"
+        exit 1
+    fi
+else
+    echo "✅ Adminer already installed"
 fi
 
-# Configure Apache virtual host
-echo "Configuring Apache..."
-# Add global ServerName
+echo "2. Configuring Apache server..."
+echo "- Setting global server name..."
 echo "ServerName localhost" >> /etc/apache2/httpd.conf
 
+echo "3. Creating virtual host configuration..."
 cat > /etc/apache2/conf.d/adminer.conf << 'EOF'
 <VirtualHost *:8080>
     ServerName localhost
@@ -34,30 +45,53 @@ cat > /etc/apache2/conf.d/adminer.conf << 'EOF'
     CustomLog /dev/stdout combined
 </VirtualHost>
 EOF
+echo "✅ Virtual host configuration created"
 
-# Configure Apache
-echo "Setting up Apache configuration..."
-sed -i \
+echo "4. Configuring Apache modules and settings..."
+echo "- Updating Apache configuration..."
+if ! sed -i \
     -e 's/#LoadModule rewrite_module/LoadModule rewrite_module/' \
     -e 's/Listen 80/Listen 8080/' \
     -e 's/User apache/User www-data/' \
     -e 's/Group apache/Group www-data/' \
-    /etc/apache2/httpd.conf
+    /etc/apache2/httpd.conf; then
+    echo "❌ ERROR: Failed to configure Apache!"
+    exit 1
+fi
+echo "✅ Apache configuration updated"
 
-# Configure PHP
-echo "Configuring PHP..."
-sed -i \
+echo "5. Configuring PHP..."
+echo "- Enabling required PHP extensions..."
+if ! sed -i \
     -e 's/;extension=pdo_mysql/extension=pdo_mysql/' \
     -e 's/;extension=mysqli/extension=mysqli/' \
-    /etc/php81/php.ini
+    /etc/php81/php.ini; then
+    echo "❌ ERROR: Failed to configure PHP!"
+    exit 1
+fi
+echo "✅ PHP configuration updated"
 
-# Set proper permissions
-echo "Setting permissions..."
+echo "6. Setting up permissions..."
+echo "- Setting ownership for Apache directories..."
 chown -R www-data:www-data /run/apache2 /var/www/html /var/log/apache2
+echo "✅ Permissions set correctly"
 
-# Create a symlink for healthcheck
+echo "7. Creating healthcheck symlink..."
 ln -sf /var/www/html/index.php /var/www/html/adminer.php
+echo "✅ Healthcheck symlink created"
 
-echo "Starting Apache..."
+echo "8. Verifying configuration..."
+if [ ! -f "/etc/apache2/conf.d/adminer.conf" ]; then
+    echo "❌ ERROR: Virtual host configuration not found!"
+    exit 1
+fi
+if [ ! -f "/var/www/html/index.php" ]; then
+    echo "❌ ERROR: Adminer not installed correctly!"
+    exit 1
+fi
+echo "✅ All configurations verified"
+
+echo "=== Initialization complete. Starting Apache... ==="
+
 # Start Apache in foreground
 exec httpd -D FOREGROUND
