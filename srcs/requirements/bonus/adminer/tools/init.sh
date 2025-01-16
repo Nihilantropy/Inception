@@ -93,5 +93,16 @@ echo "✅ All configurations verified"
 
 echo "=== Initialization complete. Starting Apache... ==="
 
+cat << "EOF"
+
+   _____       .___      .__                     
+  /  _  \    __| _/_____ |__| ____   ___________ 
+ /  /_\  \  / __ |/     \|  |/    \_/ __ \_  __ \
+/    |    \/ /_/ |  Y Y  \  |   |  \  ___/|  | \/
+\____|__  /\____ |__|_|  /__|___|  /\___  >__|   
+        \/      \/     \/        \/     \/       
+
+EOF
+
 # Start Apache in foreground
 exec httpd -D FOREGROUND

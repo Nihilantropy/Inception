@@ -55,6 +55,18 @@ scrape_configs:
       - source_labels: [__name__]
         regex: '(http_requests_total|active_http_requests)'
         action: keep
+
+  - job_name: 'cadvisor'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['cadvisor:8080']
+    metric_relabel_configs:
+      - source_labels: [container_label_com_docker_compose_service]
+        regex: '.+'
+        target_label: service
+      - source_labels: [container_label_com_docker_compose_project]
+        regex: '.+'
+        target_label: project
 EOF
 echo "✅ prometheus.yml created successfully at /etc/prometheus/prometheus.yml"
 
@@ -84,6 +96,31 @@ echo "- Web config: /etc/prometheus/web.yml"
 echo "- Listen address: :9090"
 echo "- External URL: https://${DOMAIN_NAME}/prometheus/"
 echo "- Route prefix: /"
+
+cat << "EOF"
+
+                                                                                                                     
+        ##### ##                                                            /                                        
+     ######  /###                                                         #/                                         
+    /#   /  /  ###                                                  #     ##                                         
+   /    /  /    ###                                                ##     ##                                         
+       /  /      ##                                                ##     ##                                         
+      ## ##      ## ###  /###     /###   ### /### /###     /##   ######## ##  /##      /##   ##   ####       /###    
+      ## ##      ##  ###/ #### / / ###  / ##/ ###/ /##  / / ### ########  ## / ###    / ###   ##    ###  /  / #### / 
+    /### ##      /    ##   ###/ /   ###/   ##  ###/ ###/ /   ###   ##     ##/   ###  /   ###  ##     ###/  ##  ###/  
+   / ### ##     /     ##       ##    ##    ##   ##   ## ##    ###  ##     ##     ## ##    ### ##      ##  ####       
+      ## ######/      ##       ##    ##    ##   ##   ## ########   ##     ##     ## ########  ##      ##    ###      
+      ## ######       ##       ##    ##    ##   ##   ## #######    ##     ##     ## #######   ##      ##      ###    
+      ## ##           ##       ##    ##    ##   ##   ## ##         ##     ##     ## ##        ##      ##        ###  
+      ## ##           ##       ##    ##    ##   ##   ## ####    /  ##     ##     ## ####    / ##      /#   /###  ##  
+      ## ##           ###       ######     ###  ###  ### ######/   ##     ##     ##  ######/   ######/ ## / #### /   
+ ##   ## ##            ###       ####       ###  ###  ### #####     ##     ##    ##   #####     #####   ##   ###/    
+###   #  /                                                                       /                                   
+ ###    /                                                                       /                                    
+  #####/                                                                       /                                     
+    ###                                                                       /                                      
+
+EOF
 
 # Start Prometheus with validated configuration
 exec /prometheus/prometheus \

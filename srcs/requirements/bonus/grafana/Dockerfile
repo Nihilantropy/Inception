@@ -15,11 +15,15 @@ RUN mkdir -p /etc/grafana \
     /var/log/grafana
 
 # Copy the initialization script
-COPY tools/init.sh /init.sh
+COPY --chown=root:root ./tools/init.sh /init.sh
 RUN chmod +x /init.sh
 
-# Copy the dashboard JSON
-COPY dashboards/alien_eggs.json /var/lib/grafana/dashboards/
+
+COPY --chown=grafana:grafana ./tools/test.sh /test.sh
+RUN chmod +x /test.sh
+
+# Copy all dashboard files and maintain directory structure
+COPY --chown=grafana:grafana dashboards/ /var/lib/grafana/dashboards/
 
 # Set permissions for grafana user
 RUN chown -R grafana:grafana /etc/grafana /var/lib/grafana /var/log/grafana /init.sh

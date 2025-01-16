@@ -38,7 +38,6 @@ RUN chown -R prometheus:prometheus /etc/prometheus && \
 COPY --chown=prometheus:prometheus ./tools/test.sh /test.sh
 RUN chmod +x /test.sh
 
-
 # Copy the initialization script
 COPY --chown=root:root ./tools/init.sh /init.sh
 RUN chmod +x /init.sh

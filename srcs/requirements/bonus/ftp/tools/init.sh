@@ -118,5 +118,20 @@ echo "✅ All configurations verified"
 
 echo "=== Initialization complete. Starting VSFTPD... ==="
 
+cat << "EOF"
+
+
+ /$$$$$$$$ /$$$$$$$$ /$$$$$$$ 
+| $$_____/|__  $$__/| $$__  $$
+| $$         | $$   | $$  \ $$
+| $$$$$      | $$   | $$$$$$$/
+| $$__/      | $$   | $$____/ 
+| $$         | $$   | $$      
+| $$         | $$   | $$      
+|__/         |__/   |__/      
+                              
+
+EOF
+
 # Start VSFTPD
 exec /usr/sbin/vsftpd /etc/vsftpd/vsftpd.conf

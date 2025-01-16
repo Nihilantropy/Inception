@@ -21,7 +21,7 @@
 			"custom": {
 			  "axisCenteredZero": false,
 			  "axisColorMode": "text",
-			  "axisLabel": "",
+			  "axisLabel": "Requests/sec",
 			  "axisPlacement": "auto",
 			  "barAlignment": 0,
 			  "drawStyle": "line",
@@ -58,7 +58,7 @@
 				}
 			  ]
 			},
-			"unit": "short"
+			"unit": "reqps"
 		  },
 		  "overrides": []
 		},
@@ -71,8 +71,8 @@
 		"id": 1,
 		"options": {
 		  "legend": {
-			"calcs": [],
-			"displayMode": "list",
+			"calcs": ["min", "max", "mean"],
+			"displayMode": "table",
 			"placement": "bottom",
 			"showLegend": true
 		  },
@@ -91,7 +91,8 @@
 			"expr": "rate(http_requests_total[5m])",
 			"instant": false,
 			"range": true,
-			"refId": "A"
+			"refId": "A",
+			"legendFormat": "Request Rate"
 		  }
 		],
 		"title": "HTTP Request Rate",
@@ -106,12 +107,13 @@
 	  "list": []
 	},
 	"time": {
-	  "from": "now-5m",
+	  "from": "now-15m",
 	  "to": "now"
 	},
 	"timepicker": {},
 	"timezone": "",
 	"title": "Alien Eggs Metrics",
-	"version": 0,
+	"uid": "alien-eggs-metrics",
+	"version": 1,
 	"weekStart": ""
   }

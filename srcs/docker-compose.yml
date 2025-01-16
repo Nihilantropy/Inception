@@ -172,6 +172,8 @@ services:
       retries: 3
       start_period: 45s
 
+  ### MONITORING ###
+
   prometheus:
     container_name: prometheus
     image: prometheus
@@ -215,8 +217,6 @@ services:
     networks:
       - monitoring
       - proxy
-    depends_on:
-      - prometheus
     restart: on-failure
     healthcheck:
       test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/api/health || exit 1"]
@@ -224,6 +224,30 @@ services:
       timeout: 10s
       retries: 3
       start_period: 120s
+
+  cadvisor:
+    container_name: cadvisor
+    image: cadvisor
+    build:
+      context: ./requirements/bonus/cadvisor
+      dockerfile: Dockerfile
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    networks:
+      - monitoring
+      - proxy
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
 # Networks configuration
 networks:
@@ -236,6 +260,7 @@ networks:
 
 # Volumes
 volumes:
+
   wp-data:
     driver: local
     driver_opts:

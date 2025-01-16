@@ -24,7 +24,7 @@ INCEPTION_NETWORKS = $(FOLDER_PREFIX)backend-db \
                     $(FOLDER_PREFIX)proxy \
                     $(FOLDER_PREFIX)monitoring
 
-all: setup images start show
+all: setup images start show art
 
 setup: setup_volumes
 
@@ -89,7 +89,21 @@ prune:
 		docker network rm $$network 2>/dev/null || true; \
 	done
 	@echo "Removing data directories..."
-	@sudo rm -rf $(DATA_PATH)/* 2>/dev/null || true
+	@rm -rf $(DATA_PATH)/* 2>/dev/null || true
 	@echo "Done! All Inception-related resources have been removed."
+
+art:
+	@echo	"\n"	
+	@echo	"░▒▓█▓▒░▒▓███████▓▒░ ░▒▓██████▓▒░░▒▓████████▓▒░▒▓███████▓▒░▒▓████████▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓███████▓▒░"  
+	@echo	"░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░   ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░" 
+	@echo	"░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░   ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░" 
+	@echo	"░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓██████▓▒░ ░▒▓███████▓▒░  ░▒▓█▓▒░   ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░" 
+	@echo	"░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░      ░▒▓█▓▒░        ░▒▓█▓▒░   ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░" 
+	@echo	"░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ░▒▓█▓▒░   ░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░" 
+	@echo	"░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░░▒▓████████▓▒░▒▓█▓▒░        ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░" 
+	@echo	"\n"
+																											
+                                                                                                        
+
 
 .PHONY: all setup setup_volumes setup_docker_volumes setup_monitoring generate_certs setup_grafana_dirs images start show stop down restart re prune
