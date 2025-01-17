@@ -174,15 +174,14 @@ datasources:
     version: 1
     editable: true
     jsonData:
-    timeInterval: "5s"
-    queryTimeout: "30s"
-    httpMethod: "POST"
-    manageAlerts: true
-    prometheusType: Prometheus
-    prometheusVersion: 3.0.1
-    exemplarTraceIdDestinations: []
+      timeInterval: "5s"
+      queryTimeout: "30s"
+      httpMethod: "POST"
+      manageAlerts: true
+      prometheusType: Prometheus
+      prometheusVersion: 3.0.1
     secureJsonData:
-    basicAuthPassword: ${PROMETHEUS_PASSWORD}
+      basicAuthPassword: ${PROMETHEUS_PASSWORD}
     basicAuth: true
     basicAuthUser: admin
 EOF

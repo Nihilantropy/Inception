@@ -22,6 +22,7 @@ services:
       - alien-eggs
       - prometheus
       - grafana
+      - cadvisor
     volumes:
       - wp-data:/var/www/html
     restart: on-failure
@@ -233,17 +234,27 @@ services:
       dockerfile: Dockerfile
     volumes:
       - /:/rootfs:ro
-      - /var/run:/var/run:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/run:/var/run:rw
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
       - /dev/disk/:/dev/disk:ro
+      - /etc/machine-id:/etc/machine-id:ro
+      - /var/run/docker.sock:/var/run/docker.sock:rw
     networks:
       - monitoring
       - proxy
+    expose:
+      - "8080"
     restart: on-failure
+    privileged: true
+    devices: 
+      - "/dev/kmsg:/dev/kmsg:rw"
+    group_add:
+      - docker
+    security_opt:
+      - apparmor:unconfined
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/healthz"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/cadvisor/healthz"]
       interval: 30s
       timeout: 10s
       retries: 3

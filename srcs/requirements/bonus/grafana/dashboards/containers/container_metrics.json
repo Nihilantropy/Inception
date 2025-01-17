@@ -89,8 +89,6 @@
 			  "uid": "prometheus"
 			},
 			"expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\"}[1m])) by (container) * 100",
-			"instant": false,
-			"interval": "",
 			"legendFormat": "{{container}}",
 			"refId": "A"
 		  }
@@ -171,13 +169,100 @@
 			  "uid": "prometheus"
 			},
 			"expr": "container_memory_usage_bytes{container!=\"\"}",
-			"instant": false,
-			"interval": "",
 			"legendFormat": "{{container}}",
 			"refId": "A"
 		  }
 		],
 		"title": "Container Memory Usage",
+		"type": "timeseries"
+	  },
+	  {
+		"datasource": {
+		  "type": "prometheus",
+		  "uid": "prometheus"
+		},
+		"fieldConfig": {
+		  "defaults": {
+			"color": {
+			  "mode": "palette-classic"
+			},
+			"custom": {
+			  "axisCenteredZero": false,
+			  "axisColorMode": "text",
+			  "axisLabel": "Network I/O",
+			  "axisPlacement": "auto",
+			  "barAlignment": 0,
+			  "drawStyle": "line",
+			  "fillOpacity": 20,
+			  "gradientMode": "none",
+			  "hideFrom": {
+				"legend": false,
+				"tooltip": false,
+				"viz": false
+			  },
+			  "lineInterpolation": "smooth",
+			  "lineWidth": 2,
+			  "pointSize": 5,
+			  "scaleDistribution": {
+				"type": "linear"
+			  },
+			  "showPoints": "never",
+			  "spanNulls": false
+			},
+			"mappings": [],
+			"thresholds": {
+			  "mode": "absolute",
+			  "steps": [
+				{
+				  "color": "green",
+				  "value": null
+				}
+			  ]
+			},
+			"unit": "bytes"
+		  },
+		  "overrides": []
+		},
+		"gridPos": {
+		  "h": 8,
+		  "w": 24,
+		  "x": 0,
+		  "y": 8
+		},
+		"id": 3,
+		"options": {
+		  "legend": {
+			"calcs": ["mean", "max"],
+			"displayMode": "table",
+			"placement": "bottom",
+			"showLegend": true
+		  },
+		  "tooltip": {
+			"mode": "multi",
+			"sort": "desc"
+		  }
+		},
+		"targets": [
+		  {
+			"datasource": {
+			  "type": "prometheus",
+			  "uid": "prometheus"
+			},
+			"expr": "rate(container_network_receive_bytes_total{container!=\"\"}[1m])",
+			"legendFormat": "{{container}} RX",
+			"refId": "A"
+		  },
+		  {
+			"datasource": {
+			  "type": "prometheus",
+			  "uid": "prometheus"
+			},
+			"expr": "rate(container_network_transmit_bytes_total{container!=\"\"}[1m])",
+			"legendFormat": "{{container}} TX",
+			"refId": "B"
+		  }
+		],
+		"title": "Container Network I/O",
 		"type": "timeseries"
 	  }
 	],

@@ -56,17 +56,20 @@ scrape_configs:
         regex: '(http_requests_total|active_http_requests)'
         action: keep
 
+  # Modified cadvisor job configuration
   - job_name: 'cadvisor'
     scrape_interval: 5s
+    metrics_path: '/metrics'
+    scheme: 'http'
     static_configs:
       - targets: ['cadvisor:8080']
     metric_relabel_configs:
       - source_labels: [container_label_com_docker_compose_service]
-        regex: '.+'
         target_label: service
-      - source_labels: [container_label_com_docker_compose_project]
-        regex: '.+'
-        target_label: project
+      - source_labels: [container_name]
+        target_label: container
+      - source_labels: [image]
+        target_label: docker_image
 EOF
 echo "✅ prometheus.yml created successfully at /etc/prometheus/prometheus.yml"
 

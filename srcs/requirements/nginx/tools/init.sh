@@ -128,8 +128,8 @@ http {
 			proxy_set_header X-Forwarded-Proto \$scheme;
 		}
 
+		# Route for prometheus
 		location /prometheus/ {
-			# Direct proxy to prometheus
 			proxy_pass http://prometheus:9090/;
 			
 			# Essential proxy headers
@@ -147,11 +147,9 @@ http {
 			proxy_connect_timeout 60s;
 			proxy_send_timeout 60s;
 			proxy_read_timeout 60s;
-			
-			# Debug headers
-			add_header X-Debug-Message "Proxying to Prometheus" always;
 		}
 
+		# Route for grafana
 		location /grafana {
 			proxy_pass http://grafana:3000;
 			proxy_set_header Host \$host;
@@ -169,6 +167,7 @@ http {
 			proxy_read_timeout 60s;
 		}
 
+		# Route for cadvisor
 		location /cadvisor {
 			proxy_pass http://cadvisor:8080;
 			proxy_set_header Host \$host;
