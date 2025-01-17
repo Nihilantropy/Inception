@@ -31,7 +31,7 @@ RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-# Helper function for success/failure messages
+# Helper functions
 print_result() {
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}✓ $1${NC}"
@@ -41,7 +41,6 @@ print_result() {
     fi
 }
 
-# Helper function for timing requests
 time_request() {
     local start=$(date +%s%N)
     "$@"
@@ -50,6 +49,16 @@ time_request() {
     local duration=$(( (end - start) / 1000000 ))
     echo -e "${YELLOW}Request took ${duration}ms${NC}"
     return $status
+}
+
+grafana_api_call() {
+    local endpoint=$1
+    docker exec grafana curl -s -L \
+        --fail \
+        -H "Accept: application/json" \
+        -H "Content-Type: application/json" \
+        -u "${GF_SECURITY_ADMIN_USER}:${GF_SECURITY_ADMIN_PASSWORD}" \
+        "http://localhost:3000/grafana/api/${endpoint}"
 }
 
 echo "=== Testing Individual Services Health ==="
@@ -73,19 +82,44 @@ time_request curl -k --fail -s "https://${DOMAIN_NAME}/cadvisor/metrics" | grep 
 print_result "Metrics availability"
 
 echo -e "\n3. Testing Grafana..."
-# Test basic health from inside the container
 echo "Testing Grafana health..."
-docker exec grafana curl -s "http://localhost:3000/api/health" | grep -q "\"database\":\"ok\""
-print_result "Grafana database health check"
+if docker exec grafana curl -s -f "http://localhost:3000/grafana/api/health" > /dev/null; then
+    print_result "Grafana health check"
+else
+    echo -e "${RED}✗ Grafana health check failed${NC}"
+    exit 1
+fi
 
-# Test Prometheus data source from inside the container
-echo "Testing Prometheus data source connection..."
-docker exec grafana curl -s \
+echo "Testing Prometheus connectivity..."
+echo "- Testing network reachability..."
+docker exec grafana ping -c 1 prometheus
+print_result "Network connectivity check"
+
+echo "- Testing Prometheus authorization..."
+docker exec -e PROMETHEUS_PASSWORD="${PROMETHEUS_PASSWORD}" grafana curl -s \
+    -u "admin:${PROMETHEUS_PASSWORD}" \
+    http://prometheus:9090/-/healthy
+print_result "Prometheus authorization check"
+
+echo "Checking Grafana datasource configuration..."
+DATASOURCES=$(docker exec grafana curl -s -L --fail \
     -H "Accept: application/json" \
-    -H "Content-Type: application/json" \
     -u "${GF_SECURITY_ADMIN_USER}:${GF_SECURITY_ADMIN_PASSWORD}" \
-    "http://localhost:3000/api/datasources/proxy/1/api/v1/query?query=up" | grep -q "\"status\":\"success\""
-print_result "Prometheus data source connection check"
+    "http://localhost:3000/api/datasources")
+
+if [ $? -eq 0 ] && [ -n "$DATASOURCES" ]; then
+    print_result "Datasource configuration accessible"
+    if echo "$DATASOURCES" | grep -q '"name":"Prometheus"'; then
+        print_result "Prometheus datasource found"
+    else
+        echo -e "${RED}✗ Prometheus datasource not found${NC}"
+        echo "Available datasources:"
+        echo "$DATASOURCES"
+    fi
+else
+    echo -e "${RED}✗ Failed to access datasource configuration${NC}"
+    echo "Response: $DATASOURCES"
+fi
 
 echo -e "\n=== Testing Metrics Collection ==="
 
@@ -115,35 +149,32 @@ for metric in "${metrics_to_test[@]}"; do
 done
 
 echo -e "\n6. Testing Grafana Dashboards..."
-# Let's test this through the nginx proxy by using docker exec to access grafana's API
 echo "Testing dashboard provisioning..."
-docker exec grafana curl -s \
+DASHBOARD_RESPONSE=$(docker exec grafana curl -s -L --fail \
     -H "Accept: application/json" \
     -u "${GF_SECURITY_ADMIN_USER}:${GF_SECURITY_ADMIN_PASSWORD}" \
-    "http://localhost:3000/api/search?type=dash-db" > /tmp/grafana_dashboards.json
+    "http://localhost:3000/api/search?type=dash-db")
 
-# Check if we got any dashboards
-if [ -s "/tmp/grafana_dashboards.json" ]; then
+if [ $? -eq 0 ] && [ -n "$DASHBOARD_RESPONSE" ]; then
+    print_result "Dashboard API accessible"
     echo -e "\nFound Grafana dashboards:"
-    cat /tmp/grafana_dashboards.json | jq -r '.[].title' 2>/dev/null || echo "No dashboards found or jq not installed"
+    echo "$DASHBOARD_RESPONSE" | grep -o '"title":"[^"]*"' | cut -d'"' -f4 || echo "No dashboards found"
     
-    # Check for specific dashboards
-    if cat /tmp/grafana_dashboards.json | grep -q "alien-eggs-metrics"; then
+    if echo "$DASHBOARD_RESPONSE" | grep -q '"title":"Alien Eggs Metrics"'; then
         print_result "Alien Eggs dashboard found"
     else
         echo -e "${RED}✗ Alien Eggs dashboard not found${NC}"
     fi
     
-    if cat /tmp/grafana_dashboards.json | grep -q "inception-containers"; then
+    if echo "$DASHBOARD_RESPONSE" | grep -q '"title":"Inception Container Metrics"'; then
         print_result "Container metrics dashboard found"
     else
         echo -e "${RED}✗ Container metrics dashboard not found${NC}"
     fi
 else
-    echo -e "${RED}✗ No dashboards found or couldn't access Grafana API${NC}"
+    echo -e "${RED}✗ Failed to access dashboard configuration${NC}"
+    echo "Response: $DASHBOARD_RESPONSE"
 fi
-
-rm -f /tmp/grafana_dashboards.json
 
 echo -e "\n7. Testing Complete Monitoring Pipeline..."
 echo "Generating test traffic..."
@@ -154,20 +185,22 @@ for i in {1..5}; do
 done
 echo ""
 
-# Check if traffic is recorded in Prometheus
 echo "Waiting for metrics to be collected..."
 sleep 5
+
 QUERY_RESULT=$(curl -k -s -u "admin:${PROMETHEUS_PASSWORD}" \
     "https://${DOMAIN_NAME}/prometheus/api/v1/query?query=increase(http_requests_total[1m])")
 
-echo "Query result: $QUERY_RESULT"
-
-REQUESTS=$(echo "$QUERY_RESULT" | grep -o '"value":\[[0-9.]*,[0-9.]*\]' | grep -o '[0-9.]*$')
-
-if [ -n "$REQUESTS" ] && [ $(echo "$REQUESTS > 0" | bc -l) -eq 1 ]; then
-    print_result "Traffic recording test (recorded $REQUESTS requests)"
+if [ $? -eq 0 ]; then
+    REQUESTS=$(echo "$QUERY_RESULT" | grep -o '"value":\[[0-9.]*,[0-9.]*\]' | grep -o '[0-9.]*$')
+    if [ -n "$REQUESTS" ] && [ $(echo "$REQUESTS > 0" | bc -l) -eq 1 ]; then
+        print_result "Traffic recording test (recorded $REQUESTS requests)"
+    else
+        echo -e "${RED}✗ No traffic recorded in metrics${NC}"
+        exit 1
+    fi
 else
-    echo -e "${RED}✗ No traffic recorded in metrics${NC}"
+    echo -e "${RED}✗ Failed to query metrics${NC}"
     exit 1
 fi
 

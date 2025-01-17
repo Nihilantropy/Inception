@@ -59,7 +59,7 @@ scrape_configs:
   # Modified cadvisor job configuration
   - job_name: 'cadvisor'
     scrape_interval: 5s
-    metrics_path: '/metrics'
+    metrics_path: '/cadvisor/metrics'
     scheme: 'http'
     static_configs:
       - targets: ['cadvisor:8080']

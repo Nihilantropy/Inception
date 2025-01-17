@@ -51,7 +51,7 @@ enforce_domain = true
 
 # The full public facing url you use in browser, used for redirects and emails
 # We're behind Nginx serving at /grafana subpath
-root_url = https://${DOMAIN_NAME}/grafana/
+root_url = %(protocol)s://%(domain)s/grafana
 
 # Since we're serving from /grafana subpath, this needs to be true
 serve_from_sub_path = true
@@ -180,6 +180,7 @@ datasources:
       manageAlerts: true
       prometheusType: Prometheus
       prometheusVersion: 3.0.1
+      exemplarTraceIdDestinations: []
     secureJsonData:
       basicAuthPassword: ${PROMETHEUS_PASSWORD}
     basicAuth: true

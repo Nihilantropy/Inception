@@ -89,7 +89,7 @@ prune:
 		docker network rm $$network 2>/dev/null || true; \
 	done
 	@echo "Removing data directories..."
-	@rm -rf $(DATA_PATH)/* 2>/dev/null || true
+	@sudo rm -rf $(DATA_PATH)/* 2>/dev/null || true
 	@echo "Done! All Inception-related resources have been removed."
 
 art:
