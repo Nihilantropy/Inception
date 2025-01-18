@@ -8,84 +8,116 @@ A comprehensive guide to building a containerized web infrastructure.
 <!--=====================================
 =         TABLE OF CONTENTS           =
 ======================================-->
-## Table of Contents 📚
+# Table of Contents 📚
 
 1. [Introduction to Inception](#introduction-to-inception)
    - [What is Inception?](#what-is-inception)
-   - [Project Goals](#project-goals)
-   - [Architecture Overview](#architecture-overview)
-   - [Key Technical Requirements](#key-technical-requirements)
-   - [Project Structure](#project-structure)
+   - [Project Goals](#project-goals-) <!-- Note the emoji in the heading -->
+   - [Architecture Overview](#architecture-overview-️)
+     - [Mandatory Services](#1-mandatory-services)
+     - [Bonus Services](#2-bonus-services)
+     - [Additional Services](#3-additional-services)
+   - [Key Technical Requirements](#key-technical-requirements-)
+     - [Base Image Choice](#1-base-image-choice)
+     - [Container Organization](#2-container-organization)
+     - [Data Management](#3-data-management)
+     - [Networking](#4-networking)
+     - [Configuration](#5-configuration)
+   - [Project Structure](#project-structure-)
 
-2. [Docker Fundamentals](#docker-fundamentals)
+2. [Docker Fundamentals](#docker-fundamentals-)
    - [What is Docker?](#what-is-docker)
-   - [Why Docker?](#why-docker)
-   - [Key Docker Components](#key-docker-components)
-   - [Docker in Inception Project](#docker-in-inception-project)
-   - [Traditional Docker vs. Inception Approach](#traditional-docker-vs-inception-approach)
-   - [Why Build From Scratch?](#why-build-from-scratch)
-   - [Project Implementation](#project-implementation)
+   - [Why Docker?](#why-docker-)
+   - [Key Docker Components](#key-docker-components-)
+   - [Docker in Inception Project](#docker-in-inception-project-)
+     - [Traditional Docker vs. Inception Approach](#traditional-docker-vs-inception-approach)
+     - [Why Build From Scratch?](#why-build-from-scratch)
+     - [Project Implementation](#project-implementation)
 
-3. [All Alpine](#all-alpine)
+3. [All Alpine](#all-alpine-️)
    - [The Alpine Choice](#the-alpine-choice)
    - [Why Alpine?](#why-alpine)
+     - [Size Matters](#size-matters-)
+     - [Security First](#security-first-️)
+     - [Package Management](#package-management-)
    - [Implementation in Inception](#implementation-in-inception)
    - [Impact on Services](#impact-on-services)
    - [Trade-offs and Considerations](#trade-offs-and-considerations)
 
 4. [Core Services](#core-services)
-   - [NGINX](#core-services-nginx)
-     - [Introduction & Core Functionality](#what-is-nginx)
-     - [Technical Implementation](#technical-implementation)
-     - [Security Benefits](#security-benefits)
-     - [Performance Advantages](#performance-advantages)
-   - [WordPress](#core-services-wordpress)
-     - [Introduction & Core Functionality](#what-is-wordpress)
-     - [Technical Implementation](#technical-implementation-1)
-     - [WordPress Integration](#wordpress-integration)
-     - [Security Implementation](#security-implementation)
-   - [MariaDB](#core-services-mariadb)
-     - [Introduction & Core Functionality](#what-is-mariadb)
-     - [Technical Implementation](#technical-implementation-2)
+   - [NGINX](#core-services-nginx-)
+     - [What is NGINX?](#what-is-nginx-)
+     - [Why NGINX?](#why-nginx-)
+     - [Security Benefits](#security-benefits-️)
+     - [Performance Advantages](#performance-advantages-)
+     - [Service Integration Benefits](#service-integration-benefits-)
+     - [Technical Implementation](#technical-implementation-)
+   - [WordPress](#core-services-wordpress-)
+     - [What is WordPress?](#what-is-wordpress-)
+     - [Why WordPress + PHP-FPM?](#why-wordpress--php-fpm-)
+     - [Architecture Benefits](#architecture-benefits-️)
+     - [Technical Implementation](#technical-implementation--1)
+     - [WordPress Initialization](#wordpress-initialization-)
+     - [Security Implementation](#security-implementation-)
+     - [Performance Optimization](#performance-optimization-)
+   - [MariaDB](#core-services-mariadb-️)
+     - [What is MariaDB?](#what-is-mariadb-)
+     - [Why MariaDB?](#why-mariadb-)
+     - [Architecture Benefits](#architecture-benefits-️-1)
+     - [Technical Implementation](#technical-implementation--2)
+     - [MariaDB Configuration](#mariadb-configuration)
      - [Database Initialization](#database-initialization)
-     - [Performance Optimization](#performance-optimization)
+     - [Security Implementation](#security-implementation--1)
+     - [Performance Optimization](#performance-optimization--1)
 
 5. [Bonus Services](#bonus-services)
-   - [Adminer](#bonus-services-adminer)
-     - [Introduction & Core Functionality](#what-is-adminer)
-     - [Technical Implementation](#technical-implementation-3)
-     - [Security Measures](#security-measures)
-   - [Redis](#bonus-services-redis)
-     - [Introduction & Core Functionality](#what-is-redis)
-     - [Technical Implementation](#technical-implementation-4)
+   - [Adminer](#bonus-services-adminer-️)
+     - [What is Adminer?](#what-is-adminer-)
+     - [Why Adminer?](#why-adminer-)
+     - [Architecture Benefits](#architecture-benefits-️-2)
+     - [Technical Implementation](#technical-implementation--3)
+     - [Security Implementation](#security-implementation--2)
+     - [Performance Optimization](#performance-optimization--2)
+   - [Redis](#bonus-services-redis-)
+     - [What is Redis?](#what-is-redis-)
+     - [Why Redis?](#why-redis-)
+     - [Technical Implementation](#technical-implementation--4)
      - [WordPress Integration](#wordpress-integration-1)
-   - [FTP/FTPS](#bonus-services-ftpftps)
-     - [Introduction & Core Functionality](#what-is-vsftpd)
-     - [Technical Implementation](#technical-implementation-5)
+     - [Security and Performance](#security-and-performance-️)
+   - [FTP/FTPS](#bonus-services-ftpftps-)
+     - [What is VSFTPD?](#what-is-vsftpd-)
+     - [Why VSFTPD?](#why-vsftpd-)
+     - [Technical Implementation](#technical-implementation--5)
+     - [VSFTPD Configuration](#vsftpd-configuration)
      - [SSL Certificate Management](#ssl-certificate-management)
-   - [Gatsby App](#bonus-services-gatsby-app)
-     - [Introduction & Benefits](#what-is-gatsby)
-     - [Implementation](#implementation)
-   - [Alien Eggs Game](#bonus-services-alien-eggs-game)
-     - [Introduction & Features](#what-is-alien-eggs)
-     - [Python Server Implementation](#python-server-implementation)
-     - [Monitoring Integration](#monitoring-integration)
+     - [Security and Performance](#security-and-performance--1)
+   - [Gatsby App](#bonus-services-gatsby-app-)
+     - [What is Gatsby?](#what-is-gatsby-)
+     - [Why Gatsby?](#why-gatsby-)
+     - [Implementation](#implementation-)
+   - [Alien Eggs Game](#bonus-services-alien-eggs-game-)
+     - [What is Alien Eggs?](#what-is-alien-eggs-)
+     - [Implementation Features](#implementation-features-)
+     - [Technical Setup](#technical-setup-)
+     - [Monitoring Features](#monitoring-features-)
 
 6. [Additional Services](#additional-services)
-   - [cAdvisor](#monitoring-services-cadvisor)
-     - [Introduction & Core Functionality](#what-is-cadvisor)
-     - [Technical Implementation](#technical-implementation-6)
-     - [Metrics Collection](#metrics-collection)
-   - [Prometheus](#monitoring-services-prometheus)
-     - [Introduction & Core Functionality](#what-is-prometheus)
-     - [Technical Implementation](#technical-implementation-7)
-     - [Security Implementation](#security-implementation-1)
-     - [Metrics Configuration](#metrics-configuration)
-   - [Grafana](#monitoring-services-grafana)
-     - [Introduction & Core Functionality](#what-is-grafana)
-     - [Technical Implementation](#technical-implementation-8)
-     - [Dashboard Provisioning](#dashboard-provisioning)
-     - [Security and Maintenance](#security-and-maintenance)
+   - [cAdvisor](#monitoring-services-cadvisor-)
+     - [What is cAdvisor?](#what-is-cadvisor-)
+     - [Why cAdvisor?](#why-cadvisor-)
+     - [Implementation](#implementation--1)
+     - [Metrics Collection](#metrics-collection-)
+   - [Prometheus](#monitoring-services-prometheus-)
+     - [What is Prometheus?](#what-is-prometheus-)
+     - [Why Prometheus?](#why-prometheus-)
+     - [Implementation](#implementation--2)
+     - [Service Setup](#service-setup-️)
+     - [Monitoring Integration](#monitoring-integration-)
+   - [Grafana](#monitoring-services-grafana-)
+     - [What is Grafana?](#what-is-grafana-)
+     - [Why Grafana?](#why-grafana-)
+     - [Implementation](#implementation--3)
+     - [Security and Maintenance](#security-and-maintenance-️)
 
 <!--=====================================
 =         PROJECT OVERVIEW            =
@@ -390,7 +422,7 @@ NGINX (pronounced "engine-x") is a powerful, open-source software that functions
 =         CORE FUNCTIONALITY          =
 ======================================-->
 
-## Why NGINX in Our Infrastructure? 🤔
+## Why NGINX? 🤔
 
 In our Inception project, NGINX serves as the primary gateway to all our services:
 
@@ -925,7 +957,7 @@ MariaDB is a community-developed, commercially supported fork of MySQL that prov
 =         CORE FUNCTIONALITY          =
 ======================================-->
 
-## Why MariaDB in Our Infrastructure? 🤔
+## Why MariaDB? 🤔
 
 Our MariaDB implementation focuses on three key aspects:
 
@@ -1203,7 +1235,7 @@ Adminer (formerly phpMyAdmin) is a full-featured database management tool writte
 =         CORE FUNCTIONALITY          =
 ======================================-->
 
-## Why Adminer in Our Infrastructure? 🤔
+## Why Adminer? 🤔
 
 Our Adminer implementation focuses on three key aspects:
 
@@ -1520,7 +1552,7 @@ Redis (Remote Dictionary Server) is an open-source, in-memory data structure sto
 =         CORE FUNCTIONALITY          =
 ======================================-->
 
-## Why Redis in Our Infrastructure? 🤔
+## Why Redis? 🤔
 
 Our Redis implementation focuses on these key aspects:
 
@@ -1663,7 +1695,7 @@ VSFTPD (Very Secure FTP Daemon) is a secure and stable FTP server. In our Incept
 =         CORE FUNCTIONALITY          =
 ======================================-->
 
-## Why VSFTPD in Our Infrastructure? 🤔
+## Why VSFTPD? 🤔
 
 Our FTP implementation focuses on these key aspects:
 
