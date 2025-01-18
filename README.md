@@ -144,9 +144,7 @@ The Inception project represents a comprehensive approach to modern infrastructu
 
 Docker is a platform for developing, shipping, and running applications in isolated environments called containers. A container is a lightweight, standalone package that includes everything needed to run a piece of software - from the code and runtime to system libraries and settings.
 
-<!-- <ADD IMAGE: "Simple comparison between Traditional VM vs Docker Containers, showing how containers share the host OS kernel while VMs have their own OS">
-
-![VM vs Containers](images/vm-vs-containers.png) -->
+![VM vs Containers](images/vm-vs-containers.png)
 
 <!--=====================================
 =         DOCKER BENEFITS             =
