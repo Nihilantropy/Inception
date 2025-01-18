@@ -52,25 +52,23 @@ The main objectives of Inception are:
 The Inception infrastructure consists of:
 
 ### 1. Mandatory Services
-- **NGINX**: Acts as a reverse proxy with SSL/TLS termination
-- **WordPress + PHP-FPM**: Main application server
-- **MariaDB**: Database server for persistent data storage
+- 🌐 **NGINX**: Acts as a reverse proxy with SSL/TLS termination  
+- 🖥️ **WordPress + PHP-FPM**: Main application server  
+- 🗄️ **MariaDB**: Database server for persistent data storage  
 
 ### 2. Bonus Services
-- **Redis**: Caching system for WordPress optimization
-- **VSFTPD**: FTP server for file management
-- **Adminer**: Database management interface
-- **Gatsby**: Static site generator for additional content
-- **Custom Game Integration**: Demonstrating versatile deployment capabilities
+- ⚡ **Redis**: Caching system for WordPress optimization  
+- 📂 **VSFTPD**: FTP server for file management  
+- 📊 **Adminer**: Database management interface  
+- 🚀 **Gatsby**: Static site generator for additional content  
+- 🎮 **Custom Game Integration**: Demonstrating versatile deployment capabilities  
 
 ### 3. Additional Services
-- **Prometheus**: Metrics collection and storage
-- **Grafana**: Visualization and dashboard creation
-- **cAdvisor**: Container metrics collection
+- 📈 **Prometheus**: Metrics collection and storage  
+- 📉 **Grafana**: Visualization and dashboard creation  
+- 🛠️ **cAdvisor**: Container metrics collection
 
-<!-- <ADD IMAGE: "Inception Infrastructure Diagram showing the three layers (Mandatory, Bonus, Additional) and their interconnections. Use different colors for each layer and show the network connections between services.">
-
-![Inception Architecture](images/inception-architecture.png) -->
+![Inception Architecture](images/inception-architecture.png)
 
 *Note: The monitoring services are neither part of the mandatory requirements nor the bonus part. They were added as a learning exercise to explore container monitoring.*
 
