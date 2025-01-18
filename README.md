@@ -904,8 +904,8 @@ sed -i -r 's|listen = 127.0.0.1:9000|listen = 0.0.0.0:9000|' /etc/php81/php-fpm.
      ```
    - Redis configuration in wp-config.php:
      ```php
-     define( 'WP_REDIS_HOST', '${REDIS_HOST}' );
-     define( 'WP_REDIS_PORT', ${REDIS_PORT} );
+     define('WP_REDIS_HOST', '${REDIS_HOST}');
+     define('WP_REDIS_PORT', ${REDIS_PORT});
      define('WP_CACHE', true);
      define('WP_REDIS_DISABLE_METRICS', false);
      define('WP_REDIS_METRICS_MAX_TIME', 60);
@@ -1355,11 +1355,11 @@ RUN mkdir -p /var/www/html \
     && mkdir -p /run/apache2
 
 COPY tools/init.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/init.sh
+RUN chmod +x /init.sh
 
 EXPOSE 8080
 
-CMD ["/usr/local/bin/init.sh"]
+CMD ["/init.sh"]
 ```
 
 #### Package Analysis:
@@ -1610,15 +1610,27 @@ redis:
 ```dockerfile
 FROM alpine:3.19
 
-RUN apk update && apk add --no-cache redis && \
-    echo "maxmemory 256mb" >> /etc/redis.conf && \
-    echo "maxmemory-policy allkeys-lru" >> /etc/redis.conf && \
-    sed -i 's/^bind 127.0.0.1/#bind 127.0.0.1/' /etc/redis.conf && \
-    mkdir -p /data && chown redis:redis /data
+RUN apk update && apk add --no-cache redis
+
+COPY tools/init.sh /init.sh
+RUN chmod +x /init.sh
 
 EXPOSE 6379
 
-CMD ["redis-server", "/etc/redis.conf", "--protected-mode", "no"]
+ENTRYPOINT ["/init.sh"]
+
+```
+
+We configure the redis files in the init.sh script:
+
+```bash
+echo "maxmemory 256mb" >> /etc/redis.conf
+echo "maxmemory-policy allkeys-lru" >> /etc/redis.conf
+sed -i 's/^bind 127.0.0.1/#bind 127.0.0.1/' /etc/redis.conf
+
+mkdir -p /data && chown redis:redis /data
+
+exec redis-server /etc/redis.conf --protected-mode no
 ```
 
 #### Configuration Elements:
@@ -1674,6 +1686,11 @@ Key settings:
 - Optimized connection handling
 - Selective cache invalidation
 - Efficient key storage and expiration
+
+### Take a look 🔍!
+```bash
+cat /srcs/requirements/bonus/redis/tools/init.sh
+```
 
 This Redis implementation provides a robust caching solution for WordPress, balancing performance, security, and reliability. 🚀
 
@@ -1778,7 +1795,7 @@ WORKDIR /var/www/html
 
 EXPOSE 20 21 21100-21110
 
-ENTRYPOINT ["/usr/local/bin/init.sh"]
+ENTRYPOINT ["/init.sh"]
 ```
 
 #### Configuration Elements:

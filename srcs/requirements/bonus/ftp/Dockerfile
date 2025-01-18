@@ -31,12 +31,12 @@ COPY <<EOF /etc/logrotate.d/vsftpd
 EOF
 
 # Copy the init script
-COPY tools/init.sh /usr/local/bin/init.sh
-RUN chmod +x /usr/local/bin/init.sh
+COPY tools/init.sh /init.sh
+RUN chmod +x /init.sh
 
 WORKDIR /var/www/html
 
 # Expose FTP ports
 EXPOSE 20 21 21100-21110
 
-ENTRYPOINT ["/usr/local/bin/init.sh"]
+ENTRYPOINT ["/init.sh"]

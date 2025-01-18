@@ -27,9 +27,9 @@ RUN mkdir -p /var/www/html \
 
 # Copy initialization script
 COPY tools/init.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/init.sh
+RUN chmod +x /init.sh
 
 EXPOSE 8080
 
 # Start using initialization script
-CMD ["/usr/local/bin/init.sh"]
+CMD ["/init.sh"]
