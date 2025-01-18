@@ -69,7 +69,7 @@ const CVPage = () => {
         </section>
       </main>
       <footer className="footer">
-        <p>© 2024 Claudio Rea. Built with Gatsby.js</p>
+        <p>© 2025 Claudio Rea. Built with Gatsby.js</p>
       </footer>
     </div>
   );

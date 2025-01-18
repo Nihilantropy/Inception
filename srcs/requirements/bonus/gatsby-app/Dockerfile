@@ -12,23 +12,28 @@ RUN apk add --no-cache \
     bash \
     curl
 
-# Copy the project files (adjust for your project structure)
-COPY ./ /app
+# Copy package files first for better caching
+COPY package*.json ./
 
-
+# Install dependencies
 RUN npm install
 
-# Install Gatsby CLI globally
-RUN npm install -g gatsby-cli
+# Install global packages
+RUN npm install -g gatsby-cli serve
+
+# Now copy the rest of the application
+COPY . .
 
 # Build the Gatsby site
 RUN gatsby clean && gatsby build
 
-# Install a lightweight static file server
-RUN npm install -g serve
+# Setup init script
+RUN mv /app/tools/init.sh / && \
+    chmod +x /init.sh && \
+    rm -rf /app/tools
 
 # Expose the default static file server port
 EXPOSE 3000
 
-# Serve the Gatsby static site
-CMD ["serve", "-s", "public", "-l", "3000"]
+# Init script to initial checks and server start
+ENTRYPOINT ["/init.sh"]

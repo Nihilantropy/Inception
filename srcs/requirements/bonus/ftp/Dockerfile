@@ -4,6 +4,7 @@ FROM alpine:3.19
 RUN apk update && \
     apk add --no-cache \
         vsftpd \
+        openssl \
         shadow \
         linux-pam \
         bash \
@@ -14,7 +15,8 @@ RUN apk update && \
 # Create necessary directories
 RUN mkdir -p /var/log && \
     mkdir -p /etc/vsftpd && \
-    mkdir -p /var/run/vsftpd
+    mkdir -p /var/run/vsftpd && \
+    mkdir -p /etc/ssl/private
 
 # Configure logrotate for vsftpd logs
 COPY <<EOF /etc/logrotate.d/vsftpd

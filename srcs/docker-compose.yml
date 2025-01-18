@@ -175,6 +175,40 @@ services:
 
   ### MONITORING ###
 
+  cadvisor:
+    container_name: cadvisor
+    image: cadvisor
+    build:
+      context: ./requirements/bonus/monitoring/cadvisor
+      dockerfile: Dockerfile
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+      - /etc/machine-id:/etc/machine-id:ro
+      - /var/run/docker.sock:/var/run/docker.sock:rw
+    networks:
+      - monitoring
+      - proxy
+    expose:
+      - "8080"
+    restart: on-failure
+    privileged: true
+    devices: 
+      - "/dev/kmsg:/dev/kmsg:rw"
+    group_add:
+      - docker
+    security_opt:
+      - apparmor:unconfined
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/cadvisor/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
   prometheus:
     container_name: prometheus
     image: prometheus
@@ -225,40 +259,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 120s
-
-  cadvisor:
-    container_name: cadvisor
-    image: cadvisor
-    build:
-      context: ./requirements/bonus/monitoring/cadvisor
-      dockerfile: Dockerfile
-    volumes:
-      - /:/rootfs:ro
-      - /var/run:/var/run:rw
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
-      - /dev/disk/:/dev/disk:ro
-      - /etc/machine-id:/etc/machine-id:ro
-      - /var/run/docker.sock:/var/run/docker.sock:rw
-    networks:
-      - monitoring
-      - proxy
-    expose:
-      - "8080"
-    restart: on-failure
-    privileged: true
-    devices: 
-      - "/dev/kmsg:/dev/kmsg:rw"
-    group_add:
-      - docker
-    security_opt:
-      - apparmor:unconfined
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/cadvisor/healthz"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
 
 # Networks configuration
 networks:

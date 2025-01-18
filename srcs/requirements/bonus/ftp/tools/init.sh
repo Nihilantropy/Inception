@@ -24,14 +24,27 @@ else
     exit 1
 fi
 
-echo "3. Configuring PAM authentication..."
+echo "3. Setting up SSL certificates..."
+if [ ! -f "${FTP_SSL_CERTIFICATE}" ] || [ ! -f "${FTP_SSL_CERTIFICATE_KEY}" ]; then
+    echo "- Generating new SSL certificate..."
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+        -keyout "${FTP_SSL_CERTIFICATE_KEY}" \
+        -out "${FTP_SSL_CERTIFICATE}" \
+        -subj "/C=IT/ST=Rome/L=Rome/O=42/OU=42/CN=ftp.${DOMAIN_NAME}"
+    
+    chmod 600 "${FTP_SSL_CERTIFICATE_KEY}"
+    chmod 644 "${FTP_SSL_CERTIFICATE}"
+    echo "✅ SSL certificates generated successfully"
+fi
+
+echo "4. Configuring PAM authentication..."
 cat > /etc/pam.d/vsftpd << EOF
 auth    required pam_pwdfille.so
 account required pam_permit.so
 EOF
 echo "✅ PAM configuration created"
 
-echo "4. Creating VSFTPD configuration..."
+echo "5. Creating VSFTPD configuration..."
 cat > /etc/vsftpd/vsftpd.conf << EOF
 # Standalone mode
 listen=YES
@@ -52,6 +65,20 @@ allow_writeable_chroot=YES
 hide_ids=YES
 dirlist_enable=YES
 download_enable=YES
+
+# SSL Configuration
+ssl_enable=YES
+allow_anon_ssl=NO
+force_local_data_ssl=YES
+force_local_logins_ssl=YES
+ssl_tlsv1=YES
+ssl_sslv2=NO
+ssl_sslv3=NO
+require_ssl_reuse=NO
+ssl_ciphers=HIGH
+rsa_cert_file=${FTP_SSL_CERTIFICATE}
+rsa_private_key_file=${FTP_SSL_CERTIFICATE_KEY}
+ssl_request_cert=NO
 
 # Local User Config
 user_sub_token=\$USER
@@ -81,11 +108,11 @@ connect_timeout=60
 seccomp_sandbox=NO
 ascii_upload_enable=YES
 ascii_download_enable=YES
-ftpd_banner=Welcome to FTP Server
+ftpd_banner=Welcome to FTP Server with SSL/TLS
 EOF
 echo "✅ VSFTPD configuration created"
 
-echo "5. Setting up directories and permissions..."
+echo "6. Setting up directories and permissions..."
 echo "- Creating required directories..."
 mkdir -p /var/run/vsftpd
 mkdir -p /var/log
@@ -101,9 +128,13 @@ chmod -R 775 /var/www/html
 usermod -aG www-data $FTP_USER
 echo "✅ Directories and permissions configured"
 
-echo "6. Verifying configuration..."
+echo "7. Verifying configuration..."
 if [ ! -f "/etc/vsftpd/vsftpd.conf" ]; then
     echo "❌ ERROR: VSFTPD configuration not found!"
+    exit 1
+fi
+if [ ! -f "${FTP_SSL_CERTIFICATE}" ] || [ ! -f "${FTP_SSL_CERTIFICATE_KEY}" ]; then
+    echo "❌ ERROR: SSL certificates not found!"
     exit 1
 fi
 if [ ! -f "/var/log/vsftpd.log" ]; then
@@ -117,21 +148,6 @@ fi
 echo "✅ All configurations verified"
 
 echo "=== Initialization complete. Starting VSFTPD... ==="
-
-cat << "EOF"
-
-
- /$$$$$$$$ /$$$$$$$$ /$$$$$$$ 
-| $$_____/|__  $$__/| $$__  $$
-| $$         | $$   | $$  \ $$
-| $$$$$      | $$   | $$$$$$$/
-| $$__/      | $$   | $$____/ 
-| $$         | $$   | $$      
-| $$         | $$   | $$      
-|__/         |__/   |__/      
-                              
-
-EOF
 
 # Start VSFTPD
 exec /usr/sbin/vsftpd /etc/vsftpd/vsftpd.conf

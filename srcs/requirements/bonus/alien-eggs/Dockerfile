@@ -10,10 +10,13 @@ RUN apk update && apk add --no-cache \
 WORKDIR /app
 
 # Copy the application files into the container
-COPY . .
+COPY /src .
+
+COPY tools/init.sh /init.sh
+RUN chmod +x /init.sh
 
 # Expose the port where the app will be running
 EXPOSE 8060 8000
 
-# Command to execute the Python script with correct arguments
-CMD ["python3", "src/serve.py", "--root", "/app/src", "--no-browser"]
+# init script to initial checks and server start
+ENTRYPOINT ["/init.sh"]

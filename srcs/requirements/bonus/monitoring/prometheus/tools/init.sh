@@ -25,8 +25,6 @@ cat > /etc/prometheus/web.yml << EOF
 # Basic authentication
 basic_auth_users:
   admin: ${HASHED_PASSWORD}
-
-# Other settings as needed
 EOF
 echo "✅ web.yml created successfully at /etc/prometheus/web.yml"
 

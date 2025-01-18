@@ -65,11 +65,12 @@ define( 'WP_REDIS_MAXTTL', 86400 );
 define('FTP_USER', '${FTP_USER}');
 define('FTP_PASS', '${FTP_PASS}');
 define('FTP_HOST', 'ftp:21');
-define('FS_METHOD', 'direct');
+define('FS_METHOD', 'ftpsext');
 define('FTP_BASE', '/var/www/html/');
 define('FTP_CONTENT_DIR', '/var/www/html/wp-content/');
 define('FTP_PLUGIN_DIR', '/var/www/html/wp-content/plugins/');
-define('FTP_SSL', false);
+define('FTP_SSL', true);  // Enable SSL
+define('FTP_VERIFY_SSL', false);  // Disable SSL verification for self-signed certificates
 
 /* Absolute path to the WordPress directory */
 if ( ! defined( 'ABSPATH' ) ) {

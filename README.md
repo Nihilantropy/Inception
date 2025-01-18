@@ -534,8 +534,7 @@ ENTRYPOINT ["/init.sh"]
    - Configuration validation
 
 ### Take a look :mag:!
-
-```Bash
+```bash
 cat /srcs/requirements/nginx/tools/init.sh
 ```
 
@@ -667,22 +666,28 @@ RUN apk update && apk add --no-cache \
     php81-phar \
     php81-pecl-redis \
     php81-ctype \
-    php81-ftp \
+	php81-ftp \ 
     mariadb-client \
     curl \
-    bash
+    bash \
+    && ln -s /usr/bin/php81 /usr/bin/php
 
 RUN adduser -S -G www-data www-data
 
-COPY ./tools/init-wp-config.sh /usr/local/bin/
-COPY ./tools/init-wordpress.sh /usr/local/bin/
-COPY ./tools/setup_db.sh /usr/local/bin/
-COPY ./tools/test_ftp.sh /usr/local/bin/
+COPY ./tools/init-wp-config.sh /usr/local/bin/init-wp-config.sh
+COPY ./tools/init-wordpress.sh /usr/local/bin/init-wordpress.sh
+COPY ./tools/setup_db.sh /usr/local/bin/setup_db.sh
 
 RUN chmod +x /usr/local/bin/init-wp-config.sh && \
     chmod +x /usr/local/bin/init-wordpress.sh && \
     chmod +x /usr/local/bin/setup_db.sh && \
-    chmod +x /usr/local/bin/test_ftp.sh
+    mkdir -p /var/www/html && \
+    chown -R www-data:www-data /var/www/html && \
+    chmod -R 755 /var/www/html
+
+EXPOSE 9000
+
+ENTRYPOINT ["/usr/local/bin/init-wp-config.sh"]
 ```
 
 #### Package Analysis:
@@ -757,7 +762,7 @@ Using the `cat` command ensure proper ENV `var expansion`.
 `Point 9` of the `init-wordpress.sh` script ensure proper `php-fpm` setup
 by changing the default `user`, `group` and `listen` interface to our needs
 
-```Bash
+```bash
 sed -i -r 's|^user = .*$|user = www-data|' /etc/php81/php-fpm.d/www.conf
 sed -i -r 's|^group = .*$|group = www-data|' /etc/php81/php-fpm.d/www.conf
 sed -i -r 's|listen = 127.0.0.1:9000|listen = 0.0.0.0:9000|' /etc/php81/php-fpm.d/www.conf
@@ -832,14 +837,13 @@ sed -i -r 's|listen = 127.0.0.1:9000|listen = 0.0.0.0:9000|' /etc/php81/php-fpm.
    - Connection retry mechanism in scripts
 
 ### Take a look :mag:!
-
-```Bash
+```bash
 cat /srcs/requirements/wordpress/tools/init-wordpress.sh
 ```
-```Bash
+```bash
 cat /srcs/requirements/wordpress/tools/init-wp-config.sh
 ```
-```Bash
+```bash
 cat /srcs/requirements/wordpress/tools/setup_db.sh
 ```
 
@@ -1117,8 +1121,7 @@ exec mysqld --datadir="$MARIADB_DATA_DIR" --user=mysql --init-file=/docker-entry
    - Thread handling optimization
 
 ### Take a look :mag:!
-
-```Bash
+```bash
 cat /srcs/requirements/mariadb/tools/init.sh
 ```
 
@@ -1435,7 +1438,6 @@ exec httpd -D FOREGROUND
    - Cache utilization
 
 ### Take a look 🔍!
-
 ```bash
 cat /srcs/requirements/bonus/adminer/tools/init.sh
 ```
@@ -1585,7 +1587,7 @@ Key settings:
 
 This Redis implementation provides a robust caching solution for WordPress, balancing performance, security, and reliability. 🚀
 
-# Bonus Services: FTP 📂
+# Bonus Services: FTP/FTPS 📂
 
 <!--=====================================
 =            INTRODUCTION             =
@@ -1593,7 +1595,7 @@ This Redis implementation provides a robust caching solution for WordPress, bala
 
 ## What is VSFTPD? 🚀
 
-VSFTPD (Very Secure FTP Daemon) is a secure and stable FTP server. In our Inception infrastructure, it provides file transfer capabilities for WordPress, enabling secure file uploads and management through FTP protocol while maintaining proper permissions and security.
+VSFTPD (Very Secure FTP Daemon) is a secure and stable FTP server. In our Inception infrastructure, it provides file transfer capabilities for WordPress over FTPS (FTP over SSL/TLS), enabling secure encrypted file uploads and management while maintaining proper permissions and security.
 
 <!--=====================================
 =         CORE FUNCTIONALITY          =
@@ -1604,19 +1606,19 @@ VSFTPD (Very Secure FTP Daemon) is a secure and stable FTP server. In our Incept
 Our FTP implementation focuses on these key aspects:
 
 1. **File Management** 📁
-   - file transfers
+   - Encrypted file transfers
    - WordPress uploads handling
    - Permission management
    - User authentication
 
 2. **Security** 🛡️
+   - SSL/TLS encryption
    - Chroot environment
    - User isolation
-   - Permission controls
-   - SSL/TLS support (not implemented)
+   - Certificate-based security
 
 3. **WordPress Integration** 🔌
-   - Direct access to WordPress files
+   - Secure access to WordPress files
    - Plugin and theme management
    - Media upload support
    - Proper ownership coordination
@@ -1674,14 +1676,13 @@ RUN apk update && \
         linux-pam \
         bash \
         netcat-openbsd \
-        logrotate
+        logrotate \
+        openssl
 
 RUN mkdir -p /var/log && \
     mkdir -p /etc/vsftpd && \
-    mkdir -p /var/run/vsftpd
-
-COPY tools/init.sh /usr/local/bin/init.sh
-RUN chmod +x /usr/local/bin/init.sh
+    mkdir -p /var/run/vsftpd && \
+    mkdir -p /etc/ssl/private
 
 WORKDIR /var/www/html
 
@@ -1691,25 +1692,34 @@ ENTRYPOINT ["/usr/local/bin/init.sh"]
 ```
 
 #### Configuration Elements:
-- VSFTPD installation with dependencies
-- Log management with logrotate
-- Working directory set to WordPress root
-- Initialization script for setup
-- Port exposure for FTP service
+- VSFTPD installation with SSL support
+- OpenSSL for certificate management
+- Log rotation setup
+- SSL certificate directories
+- Port exposure for FTPS service
 
 ### 3. VSFTPD Configuration
 
-The initialization script generates vsftpd.conf:
+The initialization script configures VSFTPD with SSL/TLS:
 
 ```ini
-# Standalone mode
+# Security and SSL Configuration
+ssl_enable=YES
+allow_anon_ssl=NO
+force_local_data_ssl=YES
+force_local_logins_ssl=YES
+ssl_tlsv1=YES
+ssl_sslv2=NO
+ssl_sslv3=NO
+require_ssl_reuse=NO
+ssl_ciphers=HIGH
+rsa_cert_file=${FTP_SSL_CERTIFICATE}
+rsa_private_key_file=${FTP_SSL_CERTIFICATE_KEY}
+ssl_request_cert=NO
+
+# Base Configuration
 listen=YES
 listen_port=21
-listen_address=0.0.0.0
-background=NO
-max_clients=10
-
-# Access Control
 anonymous_enable=NO
 local_enable=YES
 write_enable=YES
@@ -1719,61 +1729,37 @@ local_umask=022
 chroot_local_user=YES
 allow_writeable_chroot=YES
 hide_ids=YES
-dirlist_enable=YES
-download_enable=YES
-
-# Local User Config
-user_sub_token=$USER
-local_root=/var/www/html
-guest_enable=NO
-virtual_use_local_privs=YES
-
-# Logging
-xferlog_enable=YES
-xferlog_file=/var/log/vsftpd.log
-log_ftp_protocol=YES
-debug_ssl=YES
 
 # Passive Mode Config
 pasv_enable=YES
 pasv_min_port=21100
 pasv_max_port=21110
 pasv_address=0.0.0.0
-
-# Timeout Config
-idle_session_timeout=300
-data_connection_timeout=300
-accept_timeout=60
-connect_timeout=60
-
-# System Settings
-seccomp_sandbox=NO
-ascii_upload_enable=YES
-ascii_download_enable=YES
 ```
 
-### 4. User and Permission Management
+### 4. SSL Certificate Management
 
-The initialization script handles user setup:
+The initialization script handles certificate generation:
 
 ```bash
-# User creation and configuration
-FTP_USER=${FTP_USER:-ftpuser}
-adduser -D -h /var/www/html -s /bin/ash "${FTP_USER}"
-adduser "${FTP_USER}" www-data
-echo "${FTP_USER}:${FTP_PASS}" | chpasswd
-
-# Directory permissions
-chown -R ${FTP_USER}:www-data /var/www/html
-chmod -R 775 /var/www/html
-usermod -aG www-data $FTP_USER
+# SSL Certificate Setup
+if [ ! -f "${FTP_SSL_CERTIFICATE}" ] || [ ! -f "${FTP_SSL_CERTIFICATE_KEY}" ]; then
+    echo "- Generating new SSL certificate..."
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+        -keyout "${FTP_SSL_CERTIFICATE_KEY}" \
+        -out "${FTP_SSL_CERTIFICATE}" \
+        -subj "/C=IT/ST=Rome/L=Rome/O=42/OU=42/CN=ftp.${DOMAIN_NAME}"
+    
+    chmod 600 "${FTP_SSL_CERTIFICATE_KEY}"
+    chmod 644 "${FTP_SSL_CERTIFICATE}"
+fi
 ```
 
 Key aspects:
-- Creates FTP user with environment variables
-- Adds user to www-data group
-- Sets proper WordPress directory permissions
-- Ensures coordinated access with NGINX and PHP
+- Self-signed certificate generation
+- Proper permission setting
+- One-year validity
+- Domain-specific configuration
 
 <!--=====================================
 =     SECURITY & PERFORMANCE          =
@@ -1782,6 +1768,8 @@ Key aspects:
 ## Security and Performance 🔒
 
 ### Security Measures:
+- SSL/TLS encryption for all connections
+- Self-signed certificate management
 - User chroot jail
 - No anonymous access
 - Secure password handling
@@ -1791,10 +1779,10 @@ Key aspects:
 - PAM authentication
 
 ### WordPress Integration:
-- Direct access to WordPress files
+- SSL-enabled file transfers
 - Coordinated permissions with PHP-FPM
 - Plugin/theme upload support
-- Secure file transfer
+- Encrypted data transmission
 - Proper ownership maintenance
 
 ### Additional Features:
@@ -1804,4 +1792,832 @@ Key aspects:
 - Automatic recovery
 - Session timeout management
 
-This FTP implementation provides secure file transfer capabilities while maintaining proper integration with WordPress and other services in our infrastructure. 🚀
+### Take a look 🔍!
+```bash
+cat /srcs/requirements/bonus/ftp/tools/init.sh
+```
+
+This FTPS implementation provides secure, encrypted file transfer capabilities while maintaining proper integration with WordPress and other services in our infrastructure. 🚀
+
+# Bonus Services: Gatsby App 🎨
+
+<!--=====================================
+=            INTRODUCTION             =
+======================================-->
+
+## What is Gatsby? 🚀
+
+Gatsby is a React-based framework for building static websites. In our infrastructure, it serves a simple CV-style static page, demonstrating how modern JavaScript applications can be integrated into our containerized environment.
+
+<!--=====================================
+=         CORE BENEFITS               =
+======================================-->
+
+## Why Gatsby? 🤔
+
+1. **Performance** ⚡
+   - Static site generation means faster page loads
+   - Build-time rendering eliminates server-side processing
+   - Automatic code splitting and optimization
+
+2. **Development** 🛠️
+   - React-based components for modern web development
+   - Hot reloading for efficient development workflow
+   - Simple deployment process with static files
+
+<!--=====================================
+=     TECHNICAL IMPLEMENTATION        =
+======================================-->
+
+## Implementation 🔧
+
+### Docker Configuration
+
+```yaml
+gatsby-app:
+    container_name: gatsby-app
+    image: gatsby-app
+    build: 
+      context: ./requirements/bonus/gatsby-app
+      dockerfile: Dockerfile
+    networks:
+      - proxy
+    restart: on-failure
+```
+
+### Node.js Environment Setup
+
+```dockerfile
+FROM alpine:3.19
+
+WORKDIR /app
+
+RUN apk add --no-cache \
+    nodejs \
+    npm \
+    git \
+    bash \
+    curl
+
+COPY package*.json ./
+
+RUN npm install
+
+RUN npm install -g gatsby-cli serve
+
+COPY . .
+
+RUN gatsby clean && gatsby build
+
+RUN mv /app/tools/init.sh / && \
+    chmod +x /init.sh && \
+    rm -rf /app/tools
+
+EXPOSE 3000
+
+ENTRYPOINT ["/init.sh"]
+```
+
+### Key Features
+- Modern JavaScript runtime with Node.js
+- Simple static file serving in production
+- Efficient build process
+- Easy integration with NGINX reverse proxy
+
+### Take a look 🔍!
+```bash
+cat /srcs/requirements/bonus/gatsby-app/tools/init.sh
+```
+
+This lightweight implementation demonstrates how modern frontend technologies can be effectively containerized and integrated into our infrastructure. 🚀
+
+# Bonus Services: Alien Eggs Game 👾
+
+<!--=====================================
+=            INTRODUCTION             =
+======================================-->
+
+## What is Alien Eggs? 🎮
+
+Alien Eggs is a custom browser game implementation that showcases containerized game deployment and monitoring. It uses Python's HTTP server capabilities to serve the game files while collecting performance metrics via Prometheus.
+
+<!--=====================================
+=         CORE FUNCTIONALITY          =
+======================================-->
+
+## Implementation Features 🚀
+
+1. **Python HTTP Server** 🐍
+   - Lightweight server implementation
+   - Static file serving
+   - Cross-Origin handling
+   - Prometheus metrics integration
+
+2. **Monitoring Integration** 📊
+   - Request counting
+   - Active connections tracking
+   - Performance metrics collection
+   - Real-time monitoring
+
+<!--=====================================
+=     TECHNICAL IMPLEMENTATION        =
+======================================-->
+
+## Technical Setup 🔧
+
+### Docker Configuration
+
+```yaml
+alien-eggs:
+    container_name: alien-eggs
+    image: alien-eggs
+    build:
+      context: ./requirements/bonus/alien-eggs
+      dockerfile: Dockerfile
+    networks:
+      - proxy
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:8060"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 45s
+```
+
+### Container Setup
+
+```dockerfile
+FROM alpine:3.19
+
+RUN apk update && apk add --no-cache \
+    python3 \
+    py3-pip \
+    py3-prometheus-client
+
+WORKDIR /app
+
+COPY /src .
+
+COPY tools/init.sh /init.sh
+RUN chmod +x /init.sh
+
+EXPOSE 8060 8000
+
+ENTRYPOINT ["/init.sh"]
+```
+
+The init.sh script does some initial checks then start the `python server`:
+
+```Bash
+python3 src/serve.py --root /app/src --no-browser
+```
+
+### Python Server Implementation
+
+Key server features:
+```python
+# Prometheus metrics
+REQUEST_COUNT = Counter("http_requests_total", "Total HTTP requests served")
+ACTIVE_REQUESTS = Gauge("active_http_requests", "Number of active HTTP requests")
+
+class MetricsRequestHandler(CORSRequestHandler):
+    def do_GET(self):
+        # Track request metrics
+        REQUEST_COUNT.inc()
+        ACTIVE_REQUESTS.inc()
+        try:
+            super().do_GET()
+        finally:
+            ACTIVE_REQUESTS.dec()
+```
+
+<!--=====================================
+=     MONITORING INTEGRATION          =
+======================================-->
+
+## Monitoring Features 📈
+
+### Metrics Collection
+- Total request count tracking
+- Active request gauging
+- Latency measurement
+- Server status monitoring
+
+### Prometheus Integration
+- Metrics exposed on port 8000
+- Custom metrics endpoints
+- Real-time data collection
+- Dashboard visualization support
+
+### Take a look 🔍!
+```bash
+cat /srcs/requirements/bonus/alien-eggs/src/serve.py
+```
+
+This implementation demonstrates how to integrate a simple game serving with monitoring capabilities, providing insights into server performance and usage patterns. 🎮
+
+# Additional Services :up:
+
+# Monitoring Services: cAdvisor 📊
+
+<!--=====================================
+=            INTRODUCTION             =
+======================================-->
+
+## What is cAdvisor? 🔍
+
+cAdvisor (Container Advisor) is a container monitoring tool that provides resource usage and performance characteristics of running containers. In our infrastructure, it serves as the primary collector of container metrics, feeding data to Prometheus for storage and Grafana for visualization.
+
+<!--=====================================
+=         CORE FUNCTIONALITY          =
+======================================-->
+
+## Why cAdvisor? 🤔
+
+1. **Container Metrics** 📈
+   - CPU usage tracking
+   - Memory consumption monitoring
+   - Network I/O statistics
+   - Storage metrics collection
+
+2. **Docker Integration** 🐳
+   - Native Docker support
+   - Real-time metrics collection
+   - Container label support
+   - Resource usage analysis
+
+<!--=====================================
+=     TECHNICAL IMPLEMENTATION        =
+======================================-->
+
+## Implementation 🔧
+
+### Docker Compose Configuration
+
+```yaml
+cadvisor:
+    container_name: cadvisor
+    image: cadvisor
+    build:
+      context: ./requirements/bonus/monitoring/cadvisor
+      dockerfile: Dockerfile
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+      - /etc/machine-id:/etc/machine-id:ro
+      - /var/run/docker.sock:/var/run/docker.sock:rw
+    networks:
+      - monitoring
+      - proxy
+    expose:
+      - "8080"
+    restart: on-failure
+    privileged: true
+    devices: 
+      - "/dev/kmsg:/dev/kmsg:rw"
+    group_add:
+      - docker
+    security_opt:
+      - apparmor:unconfined
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/cadvisor/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+```
+
+### Key Volume Mounts
+- `/:/rootfs:ro`: Root filesystem access
+- `/var/run:/var/run:rw`: Runtime data access
+- `/sys:/sys:ro`: System information
+- `/var/lib/docker/:/var/lib/docker:ro`: Docker data
+- `/var/run/docker.sock:/var/run/docker.sock:rw`: Docker socket for container metrics
+
+### Container Setup
+
+```dockerfile
+FROM alpine:3.19
+
+ENV VERSION="v0.49.2"
+
+RUN apk update && apk add --no-cache \
+    wget \
+    curl \
+    shadow \
+    libc6-compat \
+    device-mapper \
+    thin-provisioning-tools \
+    ca-certificates \
+    tzdata \
+    && rm -rf /var/cache/apk/*
+
+RUN addgroup -S -g 998 docker && \
+    addgroup -S cadvisor && \
+    adduser -S -G cadvisor cadvisor && \
+    adduser cadvisor docker
+
+RUN mkdir -p /etc/cadvisor && \
+    touch /etc/machine-id && \
+    chmod 644 /etc/machine-id && \
+    chown -R cadvisor:cadvisor /etc/cadvisor && \
+    mkdir -p /var/run/docker && \
+    chown -R root:docker /var/run/docker && \
+    chmod 775 /var/run/docker
+
+RUN wget -O /usr/local/bin/cadvisor "https://github.com/google/cadvisor/releases/download/${VERSION}/cadvisor-${VERSION}-linux-amd64" && \
+    chmod +x /usr/local/bin/cadvisor && \
+    chown root:docker /usr/local/bin/cadvisor
+
+COPY tools/init.sh /init.sh
+RUN chmod +x /init.sh && \
+    chown root:docker /init.sh
+
+EXPOSE 8080
+
+USER root
+
+ENTRYPOINT ["/init.sh"]
+```
+
+<!--=====================================
+=     METRICS & MONITORING            =
+======================================-->
+
+## Metrics Collection 📊
+
+### Core Metrics
+1. **Container Stats**
+   - CPU usage percentage
+   - Memory consumption
+   - Network traffic
+   - Disk I/O
+
+2. **System Information**
+   - Host metrics
+   - Docker stats
+   - Resource limits
+   - Usage trends
+
+### Integration Points
+1. **Prometheus**
+   - Metrics endpoint exposure
+   - Custom metric relabeling
+   - Container identification
+   - Performance data collection
+
+2. **Security Considerations**
+   - Read-only filesystem access
+   - Docker group membership
+   - Privileged mode requirements
+   - Limited network exposure
+
+### Initialization Script
+The `init.sh` script handles setup and permissions:
+```bash
+#!/bin/sh
+set -e
+
+if [ -S "/var/run/docker.sock" ]; then
+    chmod 666 /var/run/docker.sock
+    chown root:docker /var/run/docker.sock
+fi
+
+CADVISOR_OPTS="
+  --port=8080 \
+  --storage_duration=1m \
+  --housekeeping_interval=10s \
+  --max_housekeeping_interval=15s \
+  --global_housekeeping_interval=1m0s \
+  --disable_metrics=advtcp,cpu_topology,cpuset,hugetlb,memory_numa,process,referenced_memory,resctrl,sched,tcp,udp \
+  --docker_only=true \
+  --docker=unix:///var/run/docker.sock \
+  --allow_dynamic_housekeeping=true \
+  --url_base_prefix=/cadvisor \
+  --docker_env_metadata_whitelist=container_name,HOSTNAME"
+
+exec /usr/local/bin/cadvisor $CADVISOR_OPTS
+```
+
+### Take a look 🔍!
+```bash
+cat /srcs/requirements/bonus/monitoring/cadvisor/tools/init.sh
+```
+
+cAdvisor provides essential container metrics that enable monitoring and analysis of our infrastructure's performance and resource utilization. Its integration with Prometheus and Grafana creates a comprehensive monitoring solution. 🚀
+
+# Monitoring Services: Prometheus 📊
+
+<!--=====================================
+=            INTRODUCTION             =
+======================================-->
+
+## What is Prometheus? 🔍
+
+Prometheus is an open-source systems monitoring and alerting toolkit. In our infrastructure, it serves as the central metrics collection and storage system, gathering data from various services including cAdvisor and our Alien Eggs game.
+
+<!--=====================================
+=         CORE FUNCTIONALITY          =
+======================================-->
+
+## Why Prometheus? 🎯
+
+1. **Metrics Collection** 📈
+   - Pull-based metrics collection
+   - Multi-dimensional data model
+   - Flexible query language (PromQL)
+   - Service discovery support
+
+2. **Integration Points** 🔌
+   - cAdvisor container metrics
+   - Alien Eggs game metrics
+   - Built-in monitoring APIs
+   - Grafana data source
+
+<!--=====================================
+=     TECHNICAL IMPLEMENTATION        =
+======================================-->
+
+## Implementation 🔧
+
+### Docker Compose Configuration
+
+```yaml
+prometheus:
+    container_name: prometheus
+    image: prometheus
+    build:
+      context: ./requirements/bonus/monitoring/prometheus
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    volumes:
+      - prometheus-data:/prometheus/data
+    networks:
+      - monitoring
+      - proxy
+    restart: on-failure
+    healthcheck:
+      test: 
+        - CMD
+        - wget
+        - --no-verbose
+        - --tries=1
+        - --spider
+        - --auth-no-challenge
+        - --user=admin
+        - --password=${PROMETHEUS_PASSWORD}
+        - http://localhost:9090/-/healthy
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 45s
+```
+
+### Dockerfile Analysis
+
+```dockerfile
+FROM alpine:3.19
+
+# Install necessary packages
+RUN apk add --no-cache \
+    wget \
+    tar \
+    openssl \
+    python3 \
+    py3-bcrypt \
+    shadow \
+    curl \
+    netcat-openbsd
+
+# Create prometheus user and group
+RUN addgroup -S prometheus && \
+    adduser -S -G prometheus -s /sbin/nologin prometheus
+
+# Set up Prometheus
+WORKDIR /prometheus
+RUN wget https://github.com/prometheus/prometheus/releases/download/v3.0.1/prometheus-3.0.1.linux-amd64.tar.gz && \
+    tar -xvzf prometheus-3.0.1.linux-amd64.tar.gz && \
+    mv prometheus-3.0.1.linux-amd64/* . && \
+    rm -rf prometheus-3.0.1.linux-amd64 prometheus-3.0.1.linux-amd64.tar.gz
+
+# Create and configure directories
+RUN mkdir -p /etc/prometheus /prometheus/data && \
+    chown -R prometheus:prometheus /etc/prometheus && \
+    chown -R prometheus:prometheus /prometheus && \
+    chmod -R 775 /prometheus/data && \
+    chmod g+rwx /prometheus/data && \
+    chmod +x /prometheus/prometheus
+
+EXPOSE 9090
+
+USER prometheus
+WORKDIR /prometheus
+
+ENTRYPOINT ["/init.sh"]
+```
+
+#### Key Elements:
+1. **Base Image & Dependencies**
+   - Alpine Linux for minimal footprint
+   - Essential tools for setup and monitoring
+   - Python and bcrypt for password hashing
+
+2. **Security Setup**
+   - Dedicated prometheus user/group
+   - Non-login shell for security
+   - Proper file permissions
+   - User privilege separation
+
+3. **Prometheus Installation**
+   - Direct binary download
+   - Version 3.0.1 specification
+   - Clean installation process
+   - Proper directory structure
+
+4. **Security Hardening**
+   - Non-root user operation
+   - Limited permissions
+   - Proper workspace setup
+   - Custom entrypoint script
+
+### Security Implementation
+
+1. **Basic Authentication**
+```python
+# Password hash generation
+HASHED_PASSWORD=$(python3 -c "
+import bcrypt, sys
+password = '${PROMETHEUS_PASSWORD}'.encode()
+print(bcrypt.hashpw(password, bcrypt.gensalt(rounds=10)).decode())
+")
+```
+
+2. **Web Configuration**
+```yaml
+# web.yml
+basic_auth_users:
+  admin: ${HASHED_PASSWORD}
+```
+
+### Metrics Configuration
+
+```yaml
+# prometheus.yml
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    basic_auth:
+      username: 'admin'
+      password: '${PROMETHEUS_PASSWORD}'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'alien-eggs'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['alien-eggs:8000']
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: '(http_requests_total|active_http_requests)'
+        action: keep
+
+  - job_name: 'cadvisor'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['cadvisor:8080']
+    metric_relabel_configs:
+      - source_labels: [container_label_com_docker_compose_service]
+        target_label: service
+      - source_labels: [container_name]
+        target_label: container
+```
+
+<!--=====================================
+=     INITIALIZATION & SETUP          =
+======================================-->
+
+## Service Setup 🛠️
+
+### Initialization Process
+1. Password hash generation for authentication
+2. Configuration file generation
+3. Metrics endpoints setup
+4. Storage configuration
+
+### Directory Structure
+```bash
+.
+├── /etc/prometheus/     # Configuration files
+│   ├── prometheus.yml   # Main configuration
+│   └── web.yml         # Authentication config
+└── /prometheus/
+    └── data/           # TSDB storage
+```
+
+### Key Features
+- Time series database (TSDB) for metrics storage
+- Basic authentication for security
+- Metric relabeling for better organization
+- Service discovery through static configuration
+
+<!--=====================================
+=     MONITORING INTEGRATION          =
+======================================-->
+
+## Monitoring Integration 📈
+
+### Collected Metrics
+
+1. **Container Metrics** (via cAdvisor)
+   - Resource usage
+   - Performance metrics
+   - Network statistics
+   - Container health
+
+2. **Application Metrics**
+   - HTTP request counts
+   - Active connections
+   - Response times
+   - Custom metrics
+
+### PromQL Examples
+
+Monitor container CPU usage:
+```promql
+sum(rate(container_cpu_usage_seconds_total{container!=""}[1m])) by (container) * 100
+```
+
+Track HTTP requests:
+```promql
+rate(http_requests_total[5m])
+```
+
+### Take a look 🔍!
+```bash
+cat /srcs/requirements/bonus/monitoring/prometheus/tools/init.sh
+```
+
+This Prometheus implementation provides robust metrics collection and storage, forming the backbone of our monitoring infrastructure. Its integration with cAdvisor and custom application metrics enables comprehensive system observation. 🚀
+
+# Monitoring Services: Grafana 📊
+
+<!--=====================================
+=            INTRODUCTION             =
+======================================-->
+
+## What is Grafana? 📈
+
+Grafana is an open-source analytics and visualization platform. In our infrastructure, it serves as the visualization layer for our monitoring stack, providing dashboards for container metrics and application performance data stored in Prometheus.
+
+<!--=====================================
+=         CORE FUNCTIONALITY          =
+======================================-->
+
+## Why Grafana? 🎯
+
+1. **Data Visualization** 📊
+   - Real-time metric visualization
+   - Customizable dashboards
+   - Multiple data source support
+   - Interactive graph exploration
+
+2. **Monitoring Integration** 🔌
+   - Native Prometheus support
+   - Automatic datasource configuration
+   - Dashboard provisioning
+   - Metric query builder
+
+<!--=====================================
+=     TECHNICAL IMPLEMENTATION        =
+======================================-->
+
+## Implementation 🔧
+
+### Docker Compose Configuration
+
+```yaml
+grafana:
+    container_name: grafana
+    image: grafana
+    build:
+      context: ./requirements/bonus/monitoring/grafana
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+      - monitoring
+      - proxy
+    restart: on-failure
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+```
+
+### Dockerfile Analysis
+
+```dockerfile
+FROM alpine:3.19
+
+RUN apk update && apk add --no-cache \
+    grafana \
+    bash \
+    curl \
+    wget \
+    libc6-compat
+
+# Create directories and set permissions
+RUN mkdir -p /etc/grafana \
+    /var/lib/grafana \
+    /var/log/grafana
+
+# Copy dashboard configurations
+COPY --chown=grafana:grafana dashboards/ /var/lib/grafana/dashboards/
+RUN chown -R grafana:grafana /etc/grafana /var/lib/grafana /var/log/grafana
+
+USER grafana
+EXPOSE 3000
+```
+
+### Key Configuration Elements
+
+1. **Server Settings**
+```ini
+[server]
+protocol = http
+http_addr = 0.0.0.0
+http_port = 3000
+domain = ${DOMAIN_NAME}
+root_url = %(protocol)s://%(domain)s/grafana
+serve_from_sub_path = true
+```
+
+2. **Security Configuration**
+```ini
+[security]
+admin_user = ${GF_SECURITY_ADMIN_USER}
+admin_password = ${GF_SECURITY_ADMIN_PASSWORD}
+allow_embedding = true
+cookie_secure = true
+```
+
+### Dashboard Provisioning 📊
+
+Our setup includes automatic dashboard provisioning through JSON files placed in `/var/lib/grafana/dashboards/`. We've included basic dashboards for:
+- Container metrics (CPU, Memory, Network)
+- Application metrics (Request rates, Active connections)
+
+For additional dashboards, you can explore the [Grafana Dashboard Marketplace](https://grafana.com/grafana/dashboards/), which offers thousands of pre-built dashboards for various monitoring needs.
+
+### Prometheus Integration
+
+```yaml
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    version: 1
+    editable: true
+    basicAuth: true
+    basicAuthUser: admin
+```
+
+<!--=====================================
+=     SECURITY & MAINTENANCE          =
+======================================-->
+
+## Security and Maintenance 🛡️
+
+### Security Measures
+- Basic authentication required
+- Cookie security enabled
+- Anonymous access disabled
+- User signup disabled
+
+### Data Persistence
+- Grafana data volume for configurations
+- Dashboard state preservation
+- User preferences storage
+- Plugin data persistence
+
+This Grafana implementation provides a robust visualization layer for our monitoring infrastructure, offering both pre-configured dashboards and the flexibility to add custom visualizations as needed. 🚀
+
+### Take a look 🔍!
+```bash
+cat /srcs/requirements/bonus/monitoring/grafana/tools/init.sh
+```

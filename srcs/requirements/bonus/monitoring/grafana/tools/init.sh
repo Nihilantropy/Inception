@@ -22,17 +22,22 @@ echo "2. Generating grafana.ini configuration..."
 cat > /etc/grafana/grafana.ini << EOF
 #################################### Paths ####################################
 [paths]
+
 # Path to where grafana can store temp files, sessions, and the sqlite3 db
 data = /var/lib/grafana
+
 # Directory where grafana can store logs
 logs = /var/log/grafana
+
 # Directory where grafana will automatically scan and look for plugins
 plugins = /var/lib/grafana/plugins
+
 # Folder that contains provisioning config files
 provisioning = /etc/grafana/provisioning
 
 #################################### Server ####################################
 [server]
+
 # Protocol (http since we're behind Nginx that handles HTTPS)
 protocol = http
 
