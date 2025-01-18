@@ -636,7 +636,7 @@ cat /srcs/requirements/nginx/tools/init.sh
 
 ## What is WordPress? 📝
 
-WordPress is the world's most popular content management system (CMS), powering over 40% of all websites. In our Inception infrastructure, WordPress runs with PHP-FPM (FastCGI Process Manager) for optimal performance and resource utilization. This setup separates the PHP processing from the web server, allowing for better scaling and resource management.
+WordPress is the world's most popular content management system (CMS), powering over 20% of all websites. In our Inception infrastructure, WordPress runs with PHP-FPM (FastCGI Process Manager) for optimal performance and resource utilization. This setup separates the PHP processing from the web server, allowing for better scaling and resource management.
 
 <!--=====================================
 =         CORE FUNCTIONALITY          =
