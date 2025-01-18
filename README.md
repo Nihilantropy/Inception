@@ -12,7 +12,7 @@ A comprehensive guide to building a containerized web infrastructure.
 
 1. [Introduction to Inception](#introduction-to-inception)
    - [What is Inception?](#what-is-inception)
-   - [Project Goals](#project-goals-) <!-- Note the emoji in the heading -->
+   - [Project Goals](#project-goals-)
    - [Architecture Overview](#architecture-overview-️)
      - [Mandatory Services](#1-mandatory-services)
      - [Bonus Services](#2-bonus-services)
@@ -331,9 +331,7 @@ In Inception, we had the choice between Debian and Alpine Linux as base images f
 - **Rich Package Repository**: Despite its size, Alpine provides most needed packages
 - **Quick Updates**: Package installation and updates are notably faster than apt
 
-<!-- <ADD IMAGE: "Size comparison chart showing Alpine vs Debian base image sizes and final container sizes for each service in Inception">
-
-![Alpine vs Debian Sizes](images/alpine-debian-comparison.png) -->
+![Alpine vs Debian Sizes](images/debian-vs-alpine.png)
 
 <!--=====================================
 =         ALPINE IMPLEMENTATION       =
@@ -414,9 +412,7 @@ The choice of Alpine aligns perfectly with Inception's goals of understanding co
 
 NGINX (pronounced "engine-x") is a powerful, open-source software that functions as a web server, reverse proxy, load balancer, and HTTP cache. Originally designed to solve the C10K problem (handling 10,000 concurrent connections), NGINX has become one of the most popular web servers worldwide due to its efficiency and low resource consumption.
 
-<!-- <ADD IMAGE: "Visual diagram showing NGINX's role as the single entry point, with TLS termination and request routing to various backend services. Include icons for SSL/TLS encryption, backend services, and traffic flow">
-
-![NGINX Gateway](images/nginx-gateway.png) -->
+![NGINX Gateway](images/nginx-gateway.png)
 
 <!--=====================================
 =         CORE FUNCTIONALITY          =
@@ -2111,7 +2107,7 @@ cat /srcs/requirements/bonus/alien-eggs/src/serve.py
 
 This implementation demonstrates how to integrate a simple game serving with monitoring capabilities, providing insights into server performance and usage patterns. 🎮
 
-# Additional Services :up:
+# Additional Services :chart_with_upwards_trend:
 
 # Monitoring Services: cAdvisor 📊
 
