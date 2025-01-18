@@ -65,6 +65,7 @@ services:
     networks:
       - backend-db
       - proxy
+      - cache
     depends_on:
       - mariadb
       - redis
@@ -108,7 +109,7 @@ services:
     volumes:
       - wp-data:/var/www/html
     networks:
-      - backend-db
+      - cache
     restart: on-failure
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -265,6 +266,8 @@ networks:
   backend-db:
     driver: bridge
   proxy:
+    driver: bridge
+  cache:
     driver: bridge
   monitoring:
     driver: bridge
