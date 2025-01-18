@@ -29,22 +29,25 @@ fi
 echo "3. Generating nginx.conf..."
 cat << EOF > /etc/nginx/nginx.conf
 events {
-	# Basic events configuration
+    # Each worker_connection handles multiple clients in non-blocking mode
+    # 1024 is suitable for most scenarios without system tuning
 	worker_connections 1024;
 }
 
 http {
-	# Include MIME types
+	# Enables NGINX to handle various file types correctly
 	include /etc/nginx/mime.types;
 	default_type application/octet-stream;
 
-    # Define upgrade mapping
+    # Required for WebSocket connections (Grafana, Prometheus)
+    # '' means no upgrade needed, keep existing connection
     map \$http_upgrade \$connection_upgrade {
         default upgrade;
         '' close;
     }
 
-	# Custom log format
+    # Enhanced logging format including request body and user agent
+    # Useful for debugging and access analysis
 	log_format custom_logs '\$remote_addr - \$remote_user [\$time_local] '
 							'"\$request" \$status \$body_bytes_sent '
 							'"\$http_referer" "\$http_user_agent" "\$request_body"';
@@ -53,11 +56,13 @@ http {
 
 	server {
 		# ====== HTTPS Configuration ======
+		# Force HTTPS only, IPv4 and IPv6 support
 		listen 443 ssl;
 		listen [::]:443 ssl;
 
 		server_name ${DOMAIN_NAME};
 
+        # Modern SSL configuration with secure defaults
 		ssl_certificate ${SSL_CERTIFICATE};
 		ssl_certificate_key ${SSL_CERTIFICATE_KEY};
 
@@ -66,53 +71,84 @@ http {
 		ssl_ciphers 'TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384';
 		# =================================
 
-		# WordPress root directory
+		# WordPress root configuration
 		root /var/www/html;
 		index index.php index.html index.htm;
 
+        # WordPress pretty URLs and file handling
 		location / {
 			try_files \$uri \$uri/ /index.php?\$args;
 			
-			# Add proper MIME types
-			include /etc/nginx/mime.types;
-			default_type application/octet-stream;
-			
-			# Configure static file caching
-			location ~* \.(css|js|jpg|jpeg|png|gif|ico|woff|woff2|ttf|svg)$ {
-				expires 30d;
-				access_log off;
-				add_header Cache-Control "public, no-transform";
-			}
+            # Static file optimization with aggressive caching
+            location ~* \.(css|js|jpg|jpeg|png|gif|ico|woff|woff2|ttf|svg)$ {
+                expires 30d;
+                access_log off;
+                add_header Cache-Control "public, no-transform";
+            }
 		}
 
+      	# === PHP Processing ===
 		location ~ \.php$ {
+			# Parses PHP URLs for proper routing
 			fastcgi_split_path_info ^(.+\.php)(/.+)$;
+
+			# Routes PHP requests to WordPress container
 			fastcgi_pass wordpress:9000;
 			fastcgi_index index.php;
+
+			# Constructs absolute path to PHP script
 			include fastcgi_params;
 			fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
 			fastcgi_param PATH_INFO \$fastcgi_path_info;
+
+			# Extended timeout for long-running scripts
 			fastcgi_read_timeout 300;
 		}
 
+		# === Service Proxying ===
+
 		# Route for Gatsby App
 		location /gatsby-app/ {
+			# Routes requests to Gatsby application
 			proxy_pass http://gatsby-app:3000;
+			
+			# Essential proxy headers
+			proxy_set_header Host \$host;
+			proxy_set_header X-Real-IP \$remote_addr;
+			proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+			proxy_set_header X-Forwarded-Proto \$scheme;
+			
+			# Websocket support
 			proxy_http_version 1.1;
 			proxy_set_header Upgrade \$http_upgrade;
-			proxy_set_header Connection 'upgrade';
-			proxy_set_header Host \$host;
-			proxy_cache_bypass \$http_upgrade;
+			proxy_set_header Connection "upgrade";
+			
+			# Timeouts
+			proxy_connect_timeout 60s;
+			proxy_send_timeout 60s;
+			proxy_read_timeout 60s;
 		}
 
 		# Route for AlienEggs App
 		location /alien-eggs/ {
+			# Routes requests to Alien-Eggs application
 			proxy_pass http://alien-eggs:8060/;
+
+			# Essential proxy headers
+			proxy_set_header Host \$host;
+			proxy_set_header X-Real-IP \$remote_addr;
+			proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+			proxy_set_header X-Forwarded-Proto \$scheme;
+			
+			# Websocket support
 			proxy_http_version 1.1;
 			proxy_set_header Upgrade \$http_upgrade;
-			proxy_set_header Connection 'upgrade';
-			proxy_set_header Host \$host;
-			proxy_cache_bypass \$http_proxy;
+			proxy_set_header Connection "upgrade";
+			
+			# Timeouts
+			proxy_connect_timeout 60s;
+			proxy_send_timeout 60s;
+			proxy_read_timeout 60s;
 
 			# Add this rewrite rule to serve AlienEggs.html by default
 			rewrite ^/alien-eggs/?$ /alien-eggs/AlienEggs.html permanent;
@@ -120,16 +156,29 @@ http {
 
 		# Route for adminer
 		location /adminer/ {
+			# Routes requests to Adminer application
 			proxy_pass http://adminer:8080/;
-			proxy_http_version 1.1;
+
+			# Essential proxy headers
 			proxy_set_header Host \$host;
 			proxy_set_header X-Real-IP \$remote_addr;
 			proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
 			proxy_set_header X-Forwarded-Proto \$scheme;
+			
+			# Websocket support
+			proxy_http_version 1.1;
+			proxy_set_header Upgrade \$http_upgrade;
+			proxy_set_header Connection "upgrade";
+			
+			# Timeouts
+			proxy_connect_timeout 60s;
+			proxy_send_timeout 60s;
+			proxy_read_timeout 60s;
 		}
 
 		# Route for prometheus
 		location /prometheus/ {
+			# Routes requests to Prometheus application
 			proxy_pass http://prometheus:9090/;
 			
 			# Essential proxy headers
@@ -151,7 +200,10 @@ http {
 
 		# Route for grafana
 		location /grafana {
+			# Routes requests to Grafana application
 			proxy_pass http://grafana:3000;
+			
+			# Essential proxy headers
 			proxy_set_header Host \$host;
 			proxy_set_header X-Real-IP \$remote_addr;
 			proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
@@ -162,6 +214,7 @@ http {
 			proxy_set_header Upgrade \$http_upgrade;
 			proxy_set_header Connection \$connection_upgrade;
 			
+			# Timeouts
 			proxy_connect_timeout 60s;
 			proxy_send_timeout 60s;
 			proxy_read_timeout 60s;
@@ -169,7 +222,10 @@ http {
 
 		# Route for cadvisor
 		location /cadvisor {
+			# Routes requests to Cadvisor application
 			proxy_pass http://cadvisor:8080;
+
+			# Essential proxy headers
 			proxy_set_header Host \$host;
 			proxy_set_header X-Real-IP \$remote_addr;
 			proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
@@ -180,6 +236,7 @@ http {
 			proxy_set_header Upgrade \$http_upgrade;
 			proxy_set_header Connection \$connection_upgrade;
 			
+			# Timeouts
 			proxy_connect_timeout 60s;
 			proxy_send_timeout 60s;
 			proxy_read_timeout 60s;

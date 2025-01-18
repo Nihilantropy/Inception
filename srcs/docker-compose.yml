@@ -179,7 +179,7 @@ services:
     container_name: prometheus
     image: prometheus
     build:
-      context: ./requirements/bonus/prometheus
+      context: ./requirements/bonus/monitoring/prometheus
       dockerfile: Dockerfile
     env_file:
       - .env
@@ -209,7 +209,7 @@ services:
     container_name: grafana
     image: grafana
     build:
-      context: ./requirements/bonus/grafana
+      context: ./requirements/bonus/monitoring/grafana
       dockerfile: Dockerfile
     env_file:
       - .env
@@ -230,7 +230,7 @@ services:
     container_name: cadvisor
     image: cadvisor
     build:
-      context: ./requirements/bonus/cadvisor
+      context: ./requirements/bonus/monitoring/cadvisor
       dockerfile: Dockerfile
     volumes:
       - /:/rootfs:ro
