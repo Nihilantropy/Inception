@@ -49,8 +49,8 @@ define( 'WP_DEBUG_LOG', true );
 define( 'WP_DEBUG_DISPLAY', false );
 
 /* Redis configuration */
-define( 'WP_REDIS_HOST', 'redis' );
-define( 'WP_REDIS_PORT', 6379 );
+define( 'WP_REDIS_HOST', '${REDIS_HOST}' );
+define( 'WP_REDIS_PORT', ${REDIS_PORT} );
 define( 'WP_REDIS_TIMEOUT', 1 );
 define( 'WP_REDIS_READ_TIMEOUT', 1 );
 define( 'WP_REDIS_DATABASE', 0 );

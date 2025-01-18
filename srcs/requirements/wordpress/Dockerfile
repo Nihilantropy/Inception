@@ -30,13 +30,11 @@ RUN adduser -S -G www-data www-data
 COPY ./tools/init-wp-config.sh /usr/local/bin/init-wp-config.sh
 COPY ./tools/init-wordpress.sh /usr/local/bin/init-wordpress.sh
 COPY ./tools/setup_db.sh /usr/local/bin/setup_db.sh
-COPY ./tools/test_ftp.sh /usr/local/bin/test_ftp.sh
 
 # Ensure scripts are executable and set proper ownership/permissions
 RUN chmod +x /usr/local/bin/init-wp-config.sh && \
     chmod +x /usr/local/bin/init-wordpress.sh && \
     chmod +x /usr/local/bin/setup_db.sh && \
-    chmod +x /usr/local/bin/test_ftp.sh && \
     mkdir -p /var/www/html && \
     chown -R www-data:www-data /var/www/html && \
     chmod -R 755 /var/www/html

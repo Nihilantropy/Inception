@@ -27,6 +27,7 @@ echo "- Setting directory permissions..."
 find /var/www/html -type d -exec chmod 755 {} \;
 echo "- Setting file permissions..."
 find /var/www/html -type f -exec chmod 644 {} \;
+echo "✅ Initial permission are set correctly"
 
 echo "3. Preparing web root directory..."
 mkdir -p /var/www/html
@@ -104,10 +105,6 @@ if [ ! -f "wp-load.php" ]; then
 fi
 
 echo "8. Setting final permissions..."
-echo "- Setting global WordPress permissions..."
-chown -R www-data:www-data /var/www/html
-find /var/www/html -type d -exec chmod 755 {} \;
-find /var/www/html -type f -exec chmod 644 {} \;
 echo "- Setting wp-content permissions..."
 chmod -R 775 /var/www/html/wp-content
 echo "✅ All permissions set correctly"

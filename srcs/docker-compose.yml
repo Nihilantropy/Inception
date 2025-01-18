@@ -68,7 +68,6 @@ services:
       - cache
     depends_on:
       - mariadb
-      - redis
     restart: on-failure
     healthcheck:
       test: ["CMD", "php-fpm81", "-t"]
