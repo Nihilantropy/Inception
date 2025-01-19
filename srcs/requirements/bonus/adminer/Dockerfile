@@ -26,7 +26,7 @@ RUN mkdir -p /var/www/html \
     && mkdir -p /run/apache2
 
 # Copy initialization script
-COPY tools/init.sh /usr/local/bin/
+COPY tools/init.sh /init.sh
 RUN chmod +x /init.sh
 
 EXPOSE 8080

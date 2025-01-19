@@ -54,7 +54,7 @@ scrape_configs:
         regex: '(http_requests_total|active_http_requests)'
         action: keep
 
-  # Modified cadvisor job configuration
+  # cadvisor job configuration
   - job_name: 'cadvisor'
     scrape_interval: 5s
     metrics_path: '/cadvisor/metrics'

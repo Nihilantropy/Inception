@@ -24,9 +24,6 @@ RUN npm install -g gatsby-cli serve
 # Now copy the rest of the application
 COPY . .
 
-# Build the Gatsby site
-RUN gatsby clean && gatsby build
-
 # Setup init script
 RUN mv /app/tools/init.sh / && \
     chmod +x /init.sh && \

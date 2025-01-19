@@ -9,14 +9,13 @@ RUN apk update && apk add --no-cache \
 # Set the working directory
 WORKDIR /app
 
-# Copy the application files into the container
-COPY /src .
+# Copy only the source files first
+COPY src/ /app/src/
 
-COPY tools/init.sh /init.sh
-RUN chmod +x /init.sh
+ENV PYTHONUNBUFFERED=1
 
-# Expose the port where the app will be running
+# Expose the ports
 EXPOSE 8060 8000
 
-# init script to initial checks and server start
-ENTRYPOINT ["/init.sh"]
+# Start the server
+CMD ["python3", "/app/src/serve.py", "--root", "/app/src", "--no-browser", "--port", "8060", "--metrics-port", "8000"]

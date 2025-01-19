@@ -3,21 +3,19 @@
 import argparse
 import contextlib
 import os
+import signal
 import socket
-import subprocess
 import sys
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
-from prometheus_client import start_http_server, Counter, Gauge, Histogram
+from prometheus_client import start_http_server, Counter, Gauge
 
-# See cpython GH-17851 and GH-17864.
 class DualStackServer(HTTPServer):
     def server_bind(self):
-        # Suppress exception when protocol is IPv4.
+        # Suppress exception when protocol is IPv4
         with contextlib.suppress(Exception):
             self.socket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
         return super().server_bind()
-
 
 class CORSRequestHandler(SimpleHTTPRequestHandler):
     def end_headers(self):
@@ -26,69 +24,61 @@ class CORSRequestHandler(SimpleHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Origin", "*")
         super().end_headers()
 
-
-def shell_open(url):
-    if sys.platform == "win32":
-        os.startfile(url)
-    else:
-        opener = "open" if sys.platform == "darwin" else "xdg-open"
-        subprocess.call([opener, url])
-
-
 # Prometheus metrics
 REQUEST_COUNT = Counter("http_requests_total", "Total HTTP requests served")
 ACTIVE_REQUESTS = Gauge("active_http_requests", "Number of active HTTP requests")
 
 class MetricsRequestHandler(CORSRequestHandler):
     def do_GET(self):
-        # Increment request count
         REQUEST_COUNT.inc()
-        ACTIVE_REQUESTS.inc()  # Increment active requests gauge
-
+        ACTIVE_REQUESTS.inc()
         try:
             super().do_GET()
         finally:
-            ACTIVE_REQUESTS.dec()  # Decrement active requests gauge
+            ACTIVE_REQUESTS.dec()
 
+def signal_handler(signum, frame):
+    print(f"\nReceived signal {signum}. Shutting down gracefully...")
+    sys.exit(0)
 
-def serve(root, port, metrics_port, run_browser):
-    # Move directory change here
+def serve(root, port, metrics_port):
+    # Register signal handlers
+    signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler)
+
+    # Change to the specified root directory
     os.chdir(os.path.abspath(root))
-
-    # Bind to all interfaces explicitly
-    address = ("0.0.0.0", port)
-    httpd = DualStackServer(address, MetricsRequestHandler)
-
-    # Start the Prometheus metrics server on all interfaces
-    start_http_server(metrics_port, addr='0.0.0.0')
-    print(f"Prometheus metrics available at: http://0.0.0.0:{metrics_port}/metrics")
-
-    print(f"Serving application at: http://0.0.0.0:{port}")
-
+    
+    # Start Prometheus metrics server
     try:
+        start_http_server(metrics_port, addr='0.0.0.0')
+        print(f"Prometheus metrics available at: http://0.0.0.0:{metrics_port}/metrics")
+    except Exception as e:
+        print(f"Failed to start metrics server: {e}")
+        sys.exit(1)
+
+    # Start the main HTTP server
+    try:
+        httpd = DualStackServer(('0.0.0.0', port), MetricsRequestHandler)
+        print(f"Serving application at: http://0.0.0.0:{port}")
         httpd.serve_forever()
-    except KeyboardInterrupt:
-        print("\nKeyboard interrupt received, stopping server.")
+    except Exception as e:
+        print(f"Failed to start HTTP server: {e}")
+        sys.exit(1)
     finally:
         httpd.server_close()
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--port", help="port to listen on", default=8060, type=int)
     parser.add_argument("-m", "--metrics-port", help="port for Prometheus metrics", default=8000, type=int)
-    parser.add_argument(
-        "-r", "--root", help="path to serve as root (relative to `platform/web/`)", default="../../bin", type=Path
-    )
-    browser_parser = parser.add_mutually_exclusive_group(required=False)
-    browser_parser.add_argument(
-        "-n", "--no-browser", help="don't open default web browser automatically", dest="browser", action="store_false"
-    )
-    parser.set_defaults(browser=True)
+    parser.add_argument("-r", "--root", help="path to serve as root", default=".", type=str)
+    parser.add_argument("-n", "--no-browser", help="don't open browser", action="store_true")
+    
     args = parser.parse_args()
+    serve(args.root, args.port, args.metrics_port)
+    
+def display_art():
+    print(r"""
 
-    # Change to the directory where the script is located,
-    # so that the script can be run from any location.
-    os.chdir(Path(__file__).resolve().parent)
-
-    serve(args.root, args.port, args.metrics_port, args.browser)
+    """)

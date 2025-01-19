@@ -1,32 +1,63 @@
 #!/bin/sh
 set -e
 
-echo "=== Starting Static Server Initialization ==="
+echo "=== Starting Gatsby Server Initialization ==="
 
-echo "1. Checking directory structure..."
-# Check for the public directory that Gatsby creates after build
+echo "1. Verifying environment..."
+if ! command -v node > /dev/null; then
+    echo "❌ ERROR: Node.js is not installed!"
+    exit 1
+fi
+if ! command -v gatsby > /dev/null; then
+    echo "❌ ERROR: Gatsby CLI is not installed!"
+    exit 1
+fi
+echo "✅ Environment verified"
+
+echo "2. Checking project structure..."
+if [ ! -f "/app/package.json" ]; then
+    echo "❌ ERROR: package.json not found!"
+    exit 1
+fi
+if [ ! -f "/app/gatsby-config.js" ]; then
+    echo "❌ ERROR: gatsby-config.js not found!"
+    exit 1
+fi
+echo "✅ Project structure verified"
+
+echo "3. Installing dependencies..."
+# Check if node_modules exists and install if needed
+if [ ! -d "/app/node_modules" ]; then
+    npm install
+    if [ $? -ne 0 ]; then
+        echo "❌ ERROR: Failed to install dependencies!"
+        exit 1
+    fi
+fi
+echo "✅ Dependencies installed"
+
+echo "4. Building Gatsby site..."
+gatsby clean
+gatsby build
 if [ ! -d "/app/public" ]; then
-    echo "❌ ERROR: Public directory not found! Gatsby build may have failed."
+    echo "❌ ERROR: Build failed - public directory not found!"
     exit 1
 fi
-echo "✅ Public directory verified"
+echo "✅ Build completed successfully"
 
-echo "2. Checking static file server..."
-if ! command -v serve &> /dev/null; then
-    echo "❌ ERROR: serve package is not installed!"
-    exit 1
+echo "5. Verifying static server..."
+if ! command -v serve > /dev/null; then
+    echo "Installing serve package..."
+    npm install -g serve
+    if [ $? -ne 0 ]; then
+        echo "❌ ERROR: Failed to install serve package!"
+        exit 1
+    fi
 fi
-echo "✅ Static file server is available"
+echo "✅ Static server verified"
 
-echo "3. Verifying build output..."
-# Check if the main HTML file exists
-if [ ! -f "/app/public/index.html" ]; then
-    echo "❌ ERROR: index.html not found in public directory!"
-    exit 1
-fi
-echo "✅ Build output verified"
+echo "=== Initialization complete. Starting server... ==="
 
-echo "=== Initialization complete. Starting static file server... ==="
 
 cat << "EOF"
 
@@ -45,7 +76,8 @@ X8888>  888888 '8888L 9888  9888    8888    8888N=*8888  9888  888E   888E  888I
                                                                            98"                           *8E           *8E        
                                                                          ./"                             '8>           '8>        
                                                                         ~`                                "             "         
-EOF         
+EOF
 
-# Execute the static file server
-exec serve -s public -l 3000
+# Start the static file server
+# Note: Using exec to replace shell with server process
+exec serve -s public -l 3000 --cors

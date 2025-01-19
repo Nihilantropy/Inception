@@ -1974,8 +1974,7 @@ RUN npm install -g gatsby-cli serve
 
 COPY . .
 
-RUN gatsby clean && gatsby build
-
+# Setup init script
 RUN mv /app/tools/init.sh / && \
     chmod +x /init.sh && \
     rm -rf /app/tools
@@ -2064,20 +2063,26 @@ RUN apk update && apk add --no-cache \
 
 WORKDIR /app
 
-COPY /src .
+COPY src/ /app/src/
 
-COPY tools/init.sh /init.sh
-RUN chmod +x /init.sh
+COPY tools/init.sh /app/init.sh
+RUN chmod +x /app/init.sh
 
 EXPOSE 8060 8000
 
-ENTRYPOINT ["/init.sh"]
+WORKDIR /app/src
+
+CMD ["/app/init.sh"]
 ```
 
 The init.sh script does some initial checks then start the `python server`:
 
 ```Bash
-python3 src/serve.py --root /app/src --no-browser
+exec python3 serve.py \
+    --root /app/src \
+    --no-browser \
+    --port 8060 \
+    --metrics-port 8000
 ```
 
 ### Python Server Implementation
@@ -2118,6 +2123,9 @@ class MetricsRequestHandler(CORSRequestHandler):
 - Dashboard visualization support
 
 ### Take a look 🔍!
+```bash
+cat /srcs/requirements/bonus/alien-eggs/tools/init.sh
+```
 ```bash
 cat /srcs/requirements/bonus/alien-eggs/src/serve.py
 ```
@@ -2474,7 +2482,6 @@ basic_auth_users:
 ### Metrics Configuration
 
 ```yaml
-# prometheus.yml
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
@@ -2499,6 +2506,8 @@ scrape_configs:
 
   - job_name: 'cadvisor'
     scrape_interval: 5s
+    metrics_path: '/cadvisor/metrics'
+    scheme: 'http'
     static_configs:
       - targets: ['cadvisor:8080']
     metric_relabel_configs:
@@ -2506,6 +2515,8 @@ scrape_configs:
         target_label: service
       - source_labels: [container_name]
         target_label: container
+      - source_labels: [image]
+        target_label: docker_image
 ```
 
 <!--=====================================
