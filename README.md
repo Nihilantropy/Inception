@@ -131,7 +131,13 @@ A comprehensive guide to building a containerized web infrastructure.
      - [Implementation](#implementation--3)
      - [Security and Maintenance](#security-and-maintenance-️)
 
-7. [Conclusion]
+7. [Conclusion](#Conclusion-)
+   - [Project Overview](#project-overview)
+   - [Key Takeaways](#key-takeaways)
+   - [Moving Forward](#moving-forward)
+
+8. [A Word from the container abyss](#a-word-from-the-abyss-)
+
 
 <!--=====================================
 =         PROJECT OVERVIEW            =
@@ -2901,7 +2907,7 @@ If you found this guide helpful in your containerization journey, consider leavi
 
 ---
 
-# A Word from the Abyss 🌌
+# A Word from the container abyss 🌌
 
 In our relentless pursuit of knowledge, we ventured into realms where few mortals dare tread. The Inception project, a name that barely contains the eldritch truths we encountered, forced us to peer beyond the veil of conventional computing.
 
@@ -2920,3 +2926,5 @@ May your containers be stable, and your deployments clean.
 *Ph'nglui mglw'nafh Docker Registry wgah'nagl fhtagn* 🐙
 
 ~ In eternal containerization ~
+
+![LOVECRAFT ART](images/lovecraft-art.png)
