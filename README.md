@@ -138,6 +138,7 @@ A comprehensive guide to building a containerized web infrastructure.
 
 8. [A Word from the container abyss](#a-word-from-the-abyss-)
 
+---
 
 <!--=====================================
 =         PROJECT OVERVIEW            =
@@ -248,6 +249,8 @@ This structure ensures:
 - Efficient development workflow
 
 The Inception project represents a comprehensive approach to modern infrastructure deployment, combining security, efficiency, and maintainability in a containerized environment. 🌟
+
+---
 
 <!--=====================================
 =         DOCKER FUNDAMENTALS         =
@@ -548,6 +551,8 @@ CMD ["--root", "/app/src", "--no-browser", "--port", "8060", "--metrics-port", "
 
 Following these practices ensures robust container operation, proper process management, and reliable service execution in our infrastructure. 🚀
 
+---
+
 <!--=====================================
 =         ALPINE LINUX                =
 ======================================-->
@@ -647,6 +652,8 @@ While Alpine is excellent for our use case, it's important to note:
    - Slightly different configuration paths
 
 The choice of Alpine aligns perfectly with Inception's goals of understanding container infrastructure while maintaining efficient resource usage and security. 🎯
+
+---
 
 # Core Services: NGINX 🚀
 
@@ -875,6 +882,8 @@ ENTRYPOINT ["/init.sh"]
 ```bash
 cat /srcs/requirements/nginx/tools/init.sh
 ```
+
+---
 
 # Core Services: WordPress 🎨
 
@@ -1207,6 +1216,8 @@ cat /srcs/requirements/wordpress/tools/setup_db.sh
 
 This WordPress setup provides a robust, secure, and performant foundation for our web application, integrated seamlessly with other services in our infrastructure. 🚀
 
+---
+
 # Core Services: MariaDB 🗄️
 
 ![MARIADB ART](images/mariadb-art.png)
@@ -1503,6 +1514,8 @@ cat /srcs/requirements/mariadb/tools/init.sh
 
 This MariaDB setup provides a secure, efficient, and reliable database backend for our WordPress installation, ensuring data persistence and optimal performance. 🚀
 
+---
+
 # Bonus Services: Adminer 🎛️
 
 ![ADMINER ART](images/adminer-art.png)
@@ -1651,6 +1664,8 @@ cat /srcs/requirements/bonus/adminer/tools/init.sh
 ```
 
 This setup provides a secure and efficient database management interface while maintaining optimal performance. 🚀
+
+---
 
 # Bonus Services: Redis ⚡
 
@@ -1813,6 +1828,8 @@ cat /srcs/requirements/bonus/redis/tools/init.sh
 ```
 
 This Redis implementation provides a robust caching solution for WordPress, balancing performance, security, and reliability. 🚀
+
+---
 
 # Bonus Services: FTP/FTPS 📂
 
@@ -2023,6 +2040,8 @@ cat /srcs/requirements/bonus/ftp/tools/init.sh
 
 This FTPS implementation provides secure, encrypted file transfer capabilities while maintaining proper integration with WordPress and other services in our infrastructure. 🚀
 
+---
+
 # Bonus Services: Gatsby App 🎨
 
 ![GATSBY-APP ART](images/gatsby-app-art.png)
@@ -2115,6 +2134,8 @@ cat /srcs/requirements/bonus/gatsby-app/tools/init.sh
 ```
 
 This lightweight implementation demonstrates how modern frontend technologies can be effectively containerized and integrated into our infrastructure. 🚀
+
+---
 
 # Bonus Services: Alien Eggs Game 👾
 
@@ -2243,6 +2264,8 @@ cat /srcs/requirements/bonus/alien-eggs/src/serve.py
 ```
 
 This implementation demonstrates how to integrate a simple game serving with monitoring capabilities, providing insights into server performance and usage patterns. 🎮
+
+---
 
 # Additional Services :chart_with_upwards_trend:
 
@@ -2438,6 +2461,8 @@ cat /srcs/requirements/bonus/monitoring/cadvisor/tools/init.sh
 ```
 
 cAdvisor provides essential container metrics that enable monitoring and analysis of our infrastructure's performance and resource utilization. Its integration with Prometheus and Grafana creates a comprehensive monitoring solution. 🚀
+
+---
 
 # Monitoring Services: Prometheus 📊
 
@@ -2700,6 +2725,8 @@ cat /srcs/requirements/bonus/monitoring/prometheus/tools/init.sh
 
 This Prometheus implementation provides robust metrics collection and storage, forming the backbone of our monitoring infrastructure. Its integration with cAdvisor and custom application metrics enables comprehensive system observation. 🚀
 
+---
+
 # Monitoring Services: Grafana 📊
 
 ![GRAFANA ART](images/grafana-art.png)
@@ -2889,6 +2916,8 @@ This Grafana implementation provides a robust visualization layer for our monito
 cat /srcs/requirements/bonus/monitoring/grafana/tools/init.sh
 ```
 
+---
+
 # Conclusion 🎯
 
 ## Project Overview
@@ -2903,7 +2932,7 @@ The Inception project has been an intensive journey into modern infrastructure d
 ## Moving Forward
 These skills form the foundation for tackling complex infrastructure challenges in real-world environments. Each component was crafted to reflect professional standards while maintaining clarity and efficiency.
 
-If you found this guide helpful in your containerization journey, consider leaving a star :star: on the repository. Your support helps the community and might save another developer from talking to their rubber duck for too long! 🦆
+If you found this guide helpful in your containerization journey, consider leaving a star 🌟 on the repository. Your support helps the community and might save another developer from talking to their rubber duck for too long! 🦆
 
 ---
 
