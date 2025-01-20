@@ -2903,7 +2903,7 @@ The Inception project has been an intensive journey into modern infrastructure d
 ## Moving Forward
 These skills form the foundation for tackling complex infrastructure challenges in real-world environments. Each component was crafted to reflect professional standards while maintaining clarity and efficiency.
 
-If you found this guide helpful in your containerization journey, consider leaving a star :start: on the repository. Your support helps the community and might save another developer from talking to their rubber duck for too long! 🦆
+If you found this guide helpful in your containerization journey, consider leaving a star :star: on the repository. Your support helps the community and might save another developer from talking to their rubber duck for too long! 🦆
 
 ---
 
