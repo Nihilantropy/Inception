@@ -304,16 +304,14 @@ RUN apk add --no-cache php php-fpm wordpress
 # Custom configurations...
 ```
 
-<!-- <ADD IMAGE: "Visual comparison between Traditional Docker Approach (pulling images) vs Inception Approach (building from scratch), showing the layers and components involved in each approach">
-
-![Docker Approaches](images/docker-approaches.png) circa 700mb wordpress:lates, circa 140mb wordpress custom--> 
-
 ### Why Build From Scratch?
 
 1. **Understanding**: Gain deep knowledge of service configuration
 2. **Control**: Full control over what goes into each container
 3. **Security**: Minimize vulnerabilities by including only necessary components
 4. **Optimization**: Create lean containers tailored to specific needs
+
+![Docker Approaches](images/docker-approaches.png)
 
 ### Project Implementation
 
