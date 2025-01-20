@@ -131,6 +131,8 @@ A comprehensive guide to building a containerized web infrastructure.
      - [Implementation](#implementation--3)
      - [Security and Maintenance](#security-and-maintenance-️)
 
+7. [Conclusion]
+
 <!--=====================================
 =         PROJECT OVERVIEW            =
 ======================================-->
@@ -1175,16 +1177,16 @@ sed -i -r 's|listen = 127.0.0.1:9000|listen = 0.0.0.0:9000|' /etc/php82/php-fpm.
    - Thanks to the FTP configuration in the wp-config.php we can connect to the FTP (SSL) server to download and install plugins in our wordpress site
    - Redis configuration in wp-config.php:
      ```php
-    define('FTP_USER', '${FTP_USER}');
-    define('FTP_PASS', '${FTP_PASS}');
-    define('FTP_HOST', 'ftp:21');
-    define('FS_METHOD', 'direct');
-    define('FTP_BASE', '/var/www/html/');
-    define('FTP_CONTENT_DIR', '/var/www/html/wp-content/');
-    define('FTP_PLUGIN_DIR', '/var/www/html/wp-content/plugins/');
-    define('FTP_SSL', true);
-    define('FTP_VERIFY_SSL', false);
-    ```
+     define('FTP_USER', '${FTP_USER}');
+     define('FTP_PASS', '${FTP_PASS}');
+     define('FTP_HOST', 'ftp:21');
+     define('FS_METHOD', 'direct');
+     define('FTP_BASE', '/var/www/html/');
+     define('FTP_CONTENT_DIR', '/var/www/html/wp-content/');
+     define('FTP_PLUGIN_DIR', '/var/www/html/wp-content/plugins/');
+     define('FTP_SSL', true);
+     define('FTP_VERIFY_SSL', false);
+     ```
 
 ### Take a look :mag:!
 ```bash
@@ -1200,6 +1202,8 @@ cat /srcs/requirements/wordpress/tools/setup_db.sh
 This WordPress setup provides a robust, secure, and performant foundation for our web application, integrated seamlessly with other services in our infrastructure. 🚀
 
 # Core Services: MariaDB 🗄️
+
+![MARIADB ART](images/mariadb-art.png)
 
 <!--=====================================
 =            INTRODUCTION             =
@@ -1495,75 +1499,47 @@ This MariaDB setup provides a secure, efficient, and reliable database backend f
 
 # Bonus Services: Adminer 🎛️
 
+![ADMINER ART](images/adminer-art.png)
+
 <!--=====================================
 =            INTRODUCTION             =
 ======================================-->
 
 ## What is Adminer? 📊
+Adminer is a full-featured database management tool written in PHP. In our infrastructure, it provides a lightweight web interface for MariaDB administration, offering a user-friendly alternative to command-line tools.
 
-Adminer (formerly phpMyAdmin) is a full-featured database management tool written in PHP. In our Inception infrastructure, Adminer provides a lightweight, secure web interface for managing the MariaDB database, offering a user-friendly alternative to command-line database administration.
-
-<!--=====================================
-=         CORE FUNCTIONALITY          =
-======================================-->
-
-## Why Adminer? 🤔
-
-Our Adminer implementation focuses on three key aspects:
+## Core Features 🎯
 
 1. **Database Management** 💾
-   - Visual database interface
-   - Query execution
+   - Visual query interface and execution
    - Database structure manipulation
-   - Data import/export capabilities
+   - Import/export capabilities
 
 2. **Security Implementation** 🛡️
    - Secure authentication
-   - Access control
-   - HTTPS encryption (via NGINX)
+   - HTTPS encryption via NGINX
    - Network isolation
 
 3. **Integration** 🔌
    - MariaDB connectivity
    - NGINX reverse proxy
    - PHP-FPM processing
-   - Connection pooling
 
 ## Architecture Benefits 🏗️
 
-1. **Lightweight Solution**
-   - Single PHP file
-   - Minimal dependencies
-   - Efficient resource usage
-   - Fast page loads
-
-2. **Security Features**
-   - No stored credentials
-   - Session-based authentication
-   - SQL injection prevention
-   - XSS protection
-
-3. **User Interface**
-   - Intuitive design
-   - Responsive layout
-   - Modern features
-   - Dark mode support
-
-<!--=====================================
-=     TECHNICAL IMPLEMENTATION        =
-======================================-->
+- **Lightweight:** Single PHP file, minimal dependencies
+- **Security:** No stored credentials, session-based auth
+- **Interface:** Intuitive design, dark mode support
 
 ## Technical Implementation 🔧
 
-### 1. Docker Compose Configuration
-
+### Docker Compose Configuration
 ```yaml
 adminer:
     container_name: adminer
     image: adminer
     build:
       context: ./requirements/bonus/adminer
-      dockerfile: Dockerfile
     env_file:
       - .env
     networks:
@@ -1577,34 +1553,9 @@ adminer:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 30s
 ```
 
-#### Key Elements Analysis:
-
-1. **Network Configuration**:
-   - Connected to `backend-db` for database access
-   - Connected to `proxy` for NGINX communication
-   - Isolated from other services
-   - Secure network segmentation
-
-2. **Health Monitoring**:
-   - Regular health checks
-   - Quick failure detection
-   - Automatic recovery
-   - Proper startup delay
-
-3. **Dependencies**:
-   - Requires MariaDB service
-   - Ensures proper startup order
-   - Maintains service availability
-
-<!--=====================================
-=         DOCKERFILE SETUP            =
-======================================-->
-
-### 2. Dockerfile Analysis
-
+### Dockerfile Analysis
 ```dockerfile
 FROM alpine:3.20
 
@@ -1612,205 +1563,92 @@ RUN apk update && apk add --no-cache \
     apache2 \
     php82 \
     php82-apache2 \
-    php82-curl \
-    php82-cli \
     php82-mysqli \
-    php82-gd \
     php82-session \
     php82-pdo \
     php82-pdo_mysql \
-    php82-json \
-    php82-mbstring \
     mariadb-client \
     wget
 
 RUN addgroup -S -g 82 www-data 2>/dev/null || true && \
     adduser -S -u 82 -D -H -h /var/www -G www-data -g www-data www-data 2>/dev/null || true
 
-RUN mkdir -p /var/www/html \
-    && mkdir -p /run/apache2
-
-COPY tools/init.sh /usr/local/bin/
-RUN chmod +x /init.sh
+RUN mkdir -p /var/www/html /run/apache2
 
 EXPOSE 8080
-
 CMD ["/init.sh"]
 ```
 
-#### Package Analysis:
+### Critical Configurations
 
-1. **Core Components**:
-   - `apache2`: Web server
-   - `php82`: PHP runtime
-   - Various PHP extensions for functionality
-   - `mariadb-client`: Database connectivity
-
-2. **PHP Extensions**:
-   - `php82-mysqli`: MySQL/MariaDB support
-   - `php82-pdo`: Database abstraction
-   - `php82-session`: Session management
-   - `php82-json`: JSON processing
-
-3. **Security Setup**:
-   - Creates www-data user/group
-   - Sets proper permissions
-   - Configures runtime directories
-
-<!--=====================================
-=     INITIALIZATION PROCESS          =
-======================================-->
-
-### 3. Initialization Script Analysis
-
-The initialization script (`init.sh`) handles the setup and configuration:
-
-```bash
-#!/bin/sh
-set -e
-
-echo "=== Starting Adminer Initialization ==="
-
-echo "1. Setting up Adminer..."
-if [ ! -f "/var/www/html/index.php" ]; then
-    echo "- Downloading latest version of Adminer..."
-    cd /var/www/html
-    if wget "http://www.adminer.org/latest.php" -O index.php; then
-        echo "- Setting proper ownership..."
-        chown -R www-data:www-data /var/www/html
-        echo "- Setting file permissions..."
-        chmod 775 index.php
-        echo "✅ Adminer downloaded and configured successfully"
-    else
-        echo "❌ ERROR: Failed to download Adminer!"
-        exit 1
-    fi
-fi
-
-echo "2. Configuring Apache server..."
-echo "ServerName localhost" >> /etc/apache2/httpd.conf
-
-echo "3. Creating virtual host configuration..."
-cat > /etc/apache2/conf.d/adminer.conf << 'EOF'
+1. **Apache Virtual Host**
+```apache
 <VirtualHost *:8080>
-    ServerName localhost
     DocumentRoot /var/www/html
-    DirectoryIndex index.php
-    
     <Directory /var/www/html>
         Options -Indexes +FollowSymLinks
         AllowOverride All
         Require all granted
-        
-        # Redirect /adminer.php to index.php for healthcheck
-        RedirectMatch 301 ^/adminer\.php$ /
     </Directory>
-
-    ErrorLog /dev/stderr
-    CustomLog /dev/stdout combined
 </VirtualHost>
-EOF
+```
+- Directory listing prevention
+- URL rewriting support
+- Custom port to avoid NGINX conflicts
 
-echo "4. Configuring Apache modules and settings..."
-sed -i \
-    -e 's/#LoadModule rewrite_module/LoadModule rewrite_module/' \
-    -e 's/Listen 80/Listen 8080/' \
-    -e 's/User apache/User www-data/' \
-    -e 's/Group apache/Group www-data/' \
-    /etc/apache2/httpd.conf
+2. **Security Measures**
+- Non-root execution
+- Restrictive permissions
+- Session-based authentication
+- Network isolation
 
-echo "5. Configuring PHP..."
-sed -i \
-    -e 's/;extension=pdo_mysql/extension=pdo_mysql/' \
-    -e 's/;extension=mysqli/extension=mysqli/' \
-    /etc/php82/php.ini
-
-echo "6. Setting up permissions..."
-chown -R www-data:www-data /run/apache2 /var/www/html /var/log/apache2
-
-echo "7. Creating healthcheck symlink..."
-ln -sf /var/www/html/index.php /var/www/html/adminer.php
-
-# Start Apache in foreground
+3. **Process Management**
+```bash
 exec httpd -D FOREGROUND
 ```
+- Direct execution
+- Clean signal handling
+- Proper container lifecycle
 
-#### Process Breakdown:
+### Implementation Details
 
-1. **Adminer Installation**:
-   - Downloads latest version
-   - Sets proper ownership
-   - Configures permissions
-   - Creates required directories
+1. **Essential Extensions**
+- PDO for secure connections
+- MySQLi for advanced features
+- Session management support
 
-2. **Apache Configuration**:
-   - Sets up virtual host
-   - Configures modules
-   - Sets security options
-   - Enables PHP processing
+2. **Health Monitoring**
+```bash
+ln -sf /var/www/html/index.php /var/www/html/adminer.php
+```
+- Container health checks
+- Path compatibility
+- Automatic recovery
 
-3. **PHP Setup**:
-   - Enables required extensions
-   - Configures PHP settings
-   - Sets up error logging
-   - Optimizes performance
-
-<!--=====================================
-=         SECURITY MEASURES           =
-======================================-->
-
-## Security Implementation 🔒
-
-1. **Access Control**:
-   - Database credentials protection
-   - Session-based authentication
-   - HTTPS encryption (via NGINX)
-   - IP-based access control
-
-2. **File System Security**:
-   - Proper file permissions
-   - Secure ownership
-   - Directory access control
-   - Temporary file management
-
-3. **Network Security**:
-   - Backend network isolation
-   - Proxy through NGINX
-   - Limited port exposure
-   - Secure connection handling
-
-<!--=====================================
-=         PERFORMANCE TUNING          =
-======================================-->
+3. **Logging**
+```apache
+ErrorLog /dev/stderr
+CustomLog /dev/stdout combined
+```
+- Docker-friendly logging
+- Real-time monitoring
 
 ## Performance Optimization ⚡
 
-1. **Apache Configuration**:
-   - Module optimization
-   - Worker process tuning
-   - Connection pooling
-   - Keep-alive settings
-
-2. **PHP Settings**:
-   - Opcode caching
-   - Memory limits
-   - Session handling
-   - Error reporting
-
-3. **Resource Management**:
-   - Minimal dependencies
-   - Efficient file serving
-   - Query optimization
-   - Cache utilization
+- **Apache:** Module optimization, connection pooling
+- **PHP:** Opcode caching, memory limits
+- **Resources:** Minimal dependencies, efficient file serving
 
 ### Take a look 🔍!
 ```bash
 cat /srcs/requirements/bonus/adminer/tools/init.sh
 ```
 
-This Adminer setup provides a secure, efficient, and user-friendly interface for database management in our infrastructure. The implementation prioritizes security while maintaining ease of use and performance. 🚀
+This setup provides a secure and efficient database management interface while maintaining optimal performance. 🚀
 
 # Bonus Services: Redis ⚡
+
+![REDIS ART](images/redis-art.png)
 
 <!--=====================================
 =            INTRODUCTION             =
@@ -1972,6 +1810,8 @@ This Redis implementation provides a robust caching solution for WordPress, bala
 
 # Bonus Services: FTP/FTPS 📂
 
+![FTP ART](images/ftp-art.png)
+
 <!--=====================================
 =            INTRODUCTION             =
 ======================================-->
@@ -2086,7 +1926,6 @@ ENTRYPOINT ["/init.sh"]
 The initialization script configures VSFTPD with SSL/TLS:
 
 ```ini
-# Security and SSL Configuration
 ssl_enable=YES
 allow_anon_ssl=NO
 force_local_data_ssl=YES
@@ -2100,7 +1939,6 @@ rsa_cert_file=${FTP_SSL_CERTIFICATE}
 rsa_private_key_file=${FTP_SSL_CERTIFICATE_KEY}
 ssl_request_cert=NO
 
-# Base Configuration
 listen=YES
 listen_port=21
 anonymous_enable=NO
@@ -2108,12 +1946,10 @@ local_enable=YES
 write_enable=YES
 local_umask=022
 
-# Security
 chroot_local_user=YES
 allow_writeable_chroot=YES
 hide_ids=YES
 
-# Passive Mode Config
 pasv_enable=YES
 pasv_min_port=21100
 pasv_max_port=21110
@@ -2125,7 +1961,6 @@ pasv_address=0.0.0.0
 The initialization script handles certificate generation:
 
 ```bash
-# SSL Certificate Setup
 if [ ! -f "${FTP_SSL_CERTIFICATE}" ] || [ ! -f "${FTP_SSL_CERTIFICATE_KEY}" ]; then
     echo "- Generating new SSL certificate..."
     openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
@@ -2183,6 +2018,8 @@ cat /srcs/requirements/bonus/ftp/tools/init.sh
 This FTPS implementation provides secure, encrypted file transfer capabilities while maintaining proper integration with WordPress and other services in our infrastructure. 🚀
 
 # Bonus Services: Gatsby App 🎨
+
+![GATSBY-APP ART](images/gatsby-app-art.png)
 
 <!--=====================================
 =            INTRODUCTION             =
@@ -2274,6 +2111,8 @@ cat /srcs/requirements/bonus/gatsby-app/tools/init.sh
 This lightweight implementation demonstrates how modern frontend technologies can be effectively containerized and integrated into our infrastructure. 🚀
 
 # Bonus Services: Alien Eggs Game 👾
+
+![ALIEN-EGGS ART](images/alien-eggs-art.png)
 
 <!--=====================================
 =            INTRODUCTION             =
@@ -2402,6 +2241,8 @@ This implementation demonstrates how to integrate a simple game serving with mon
 # Additional Services :chart_with_upwards_trend:
 
 # Monitoring Services: cAdvisor 📊
+
+![CADVISOR ART](images/cadvisor-art.png)
 
 <!--=====================================
 =            INTRODUCTION             =
@@ -2594,6 +2435,8 @@ cAdvisor provides essential container metrics that enable monitoring and analysi
 
 # Monitoring Services: Prometheus 📊
 
+![PROMETHEUS ART](images/prometheus-art.png)
+
 <!--=====================================
 =            INTRODUCTION             =
 ======================================-->
@@ -2731,7 +2574,6 @@ ENTRYPOINT ["/init.sh"]
 
 1. **Basic Authentication**
 ```python
-# Password hash generation
 HASHED_PASSWORD=$(python3 -c "
 import bcrypt, sys
 password = '${PROMETHEUS_PASSWORD}'.encode()
@@ -2741,7 +2583,6 @@ print(bcrypt.hashpw(password, bcrypt.gensalt(rounds=10)).decode())
 
 2. **Web Configuration**
 ```yaml
-# web.yml
 basic_auth_users:
   admin: ${HASHED_PASSWORD}
 ```
@@ -2803,9 +2644,9 @@ scrape_configs:
 .
 ├── /etc/prometheus/     # Configuration files
 │   ├── prometheus.yml   # Main configuration
-│   └── web.yml         # Authentication config
+│   └── web.yml          # Authentication config
 └── /prometheus/
-    └── data/           # TSDB storage
+    └── data/            # TSDB storage
 ```
 
 ### Key Features
@@ -2854,6 +2695,8 @@ cat /srcs/requirements/bonus/monitoring/prometheus/tools/init.sh
 This Prometheus implementation provides robust metrics collection and storage, forming the backbone of our monitoring infrastructure. Its integration with cAdvisor and custom application metrics enables comprehensive system observation. 🚀
 
 # Monitoring Services: Grafana 📊
+
+![GRAFANA ART](images/grafana-art.png)
 
 <!--=====================================
 =            INTRODUCTION             =
@@ -2959,21 +2802,22 @@ allow_embedding = true
 cookie_secure = true
 ```
 
-### Dashboard Provisioning 📊
+## Grafana Dashboard Management 📊
 
-Our setup includes automatic dashboard provisioning through JSON files placed in `/var/lib/grafana/dashboards/`. We've included basic dashboards for:
+### Default Dashboards
+Our setup automatically provisions dashboards from `/var/lib/grafana/dashboards/`, including:
 - Container metrics (CPU, Memory, Network)
 - Application metrics (Request rates, Active connections)
 
-For additional dashboards, you can explore the [Grafana Dashboard Marketplace](https://grafana.com/grafana/dashboards/), which offers thousands of pre-built dashboards for various monitoring needs.
+### Adding Custom Dashboards
 
-### Prometheus Integration
-
+1. **Prometheus Integration**
+First, ensure proper datasource configuration:
 ```yaml
 datasources:
   - name: Prometheus
     type: prometheus
-    uid: prometheus
+    uid: Prometheus      # This UID is important
     access: proxy
     url: http://prometheus:9090
     isDefault: true
@@ -2988,6 +2832,31 @@ datasources:
     basicAuth: true
     basicAuthUser: "admin"
 ```
+
+2. **Finding Dashboards**
+We can browse the [Grafana Dashboard Marketplace](https://grafana.com/grafana/dashboards/) for thousend of pre-built options! But there's a catch... 
+
+3. **Handling ${DS_PROMETHEUS} Error** ❌
+When importing marketplace dashboards, you might encounter a `Datasource ${DS_PROMETHEUS} was not found` error. Fix it using either method:
+
+   **Method A: Pre-Import Fix**
+   ```bash
+   sed -i 's/${DS_PROMETHEUS}/Prometheus/g' dashboard.json
+   ```
+   - Best for automation
+   - Fixes all panels at once
+   - Suitable for multiple dashboards
+
+   **Method B: GUI Fix**
+   1. Import dashboard normally
+   2. Go to Dashboard Settings → Variables
+   3. Update datasource from `${DS_PROMETHEUS}` to `Prometheus`
+   4. Save changes
+   - Visual approach
+   - Good for quick testing
+   - Immediate feedback
+
+The error occurs because community dashboards use variable references instead of direct datasource names. Both fixing methods ensure proper Prometheus integration and metric visualization.
 
 <!--=====================================
 =     SECURITY & MAINTENANCE          =
@@ -3013,3 +2882,41 @@ This Grafana implementation provides a robust visualization layer for our monito
 ```bash
 cat /srcs/requirements/bonus/monitoring/grafana/tools/init.sh
 ```
+
+# Conclusion 🎯
+
+## Project Overview
+The Inception project has been an intensive journey into modern infrastructure development. Through building a complete containerized environment from scratch, we've gained practical experience that extends far beyond basic Docker usage.
+
+## Key Takeaways
+- Mastered container orchestration and service isolation
+- Implemented robust security practices at every layer
+- Built comprehensive monitoring and logging solutions
+- Developed clean, maintainable initialization processes
+
+## Moving Forward
+These skills form the foundation for tackling complex infrastructure challenges in real-world environments. Each component was crafted to reflect professional standards while maintaining clarity and efficiency.
+
+If you found this guide helpful in your containerization journey, consider leaving a star :start: on the repository. Your support helps the community and might save another developer from talking to their rubber duck for too long! 🦆
+
+---
+
+# A Word from the Abyss 🌌
+
+In our relentless pursuit of knowledge, we ventured into realms where few mortals dare tread. The Inception project, a name that barely contains the eldritch truths we encountered, forced us to peer beyond the veil of conventional computing.
+
+Deep in the abyssal layers of containerization, we discovered truths that changed us forever. Docker, that ancient technology of unknowable origin, revealed to us secrets of process isolation that mortal minds were perhaps not meant to comprehend. Yet comprehend we did, and our sanity held... mostly.
+
+The monitoring stack, with its all-seeing eyes, now watches our services with an unblinking gaze. Prometheus, keeper of metrics, storing time series that spiral into infinity. Grafana, the great visualizer, rendering patterns that whisper of truths beyond human understanding.
+
+Our initialization scripts, written in languages older than time itself, now wake slumbering services from their digital chrysalis. Each daemon process, each network connection, a thread in the vast tapestry of our infrastructure.
+
+The knowledge we gained... it weighs upon us. The ability to create and destroy entire environments with but a single command - such power was not meant for mere mortals. Yet here we stand, containers within containers, services calling to services, in an endless dance of deployment.
+
+Should you find yourself drawn to these forbidden arts, should these arcane configurations prove useful in your own descent into the depths of DevOps, perhaps you might leave a star - a small light in the vast darkness of the repository.
+
+May your containers be stable, and your deployments clean.
+
+*Ph'nglui mglw'nafh Docker Registry wgah'nagl fhtagn* 🐙
+
+~ In eternal containerization ~
