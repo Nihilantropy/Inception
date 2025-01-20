@@ -1,19 +1,19 @@
-FROM alpine:3.19
+FROM alpine:3.20
 
 # Install required packages
 RUN apk update && apk add --no-cache \
     apache2 \
-    php81 \
-    php81-apache2 \
-    php81-curl \
-    php81-cli \
-    php81-mysqli \
-    php81-gd \
-    php81-session \
-    php81-pdo \
-    php81-pdo_mysql \
-    php81-json \
-    php81-mbstring \
+    php82 \
+    php82-apache2 \
+    php82-curl \
+    php82-cli \
+    php82-mysqli \
+    php82-gd \
+    php82-session \
+    php82-pdo \
+    php82-pdo_mysql \
+    php82-json \
+    php82-mbstring \
     mariadb-client \
     wget
 
@@ -32,4 +32,4 @@ RUN chmod +x /init.sh
 EXPOSE 8080
 
 # Start using initialization script
-CMD ["/init.sh"]
+ENTRYPOINT ["/init.sh"]

@@ -70,7 +70,7 @@ services:
       - mariadb
     restart: on-failure
     healthcheck:
-      test: ["CMD", "php-fpm81", "-t"]
+      test: ["CMD", "php-fpm82", "-t"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -155,7 +155,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 45s
+      start_period: 60s
 
   alien-eggs:
     container_name: alien-eggs
@@ -192,8 +192,6 @@ services:
     networks:
       - monitoring
       - proxy
-    expose:
-      - "8080"
     restart: on-failure
     privileged: true
     devices: 

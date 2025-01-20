@@ -1,27 +1,27 @@
 # Base image
-FROM alpine:3.19
+FROM alpine:3.20
 
 # Install dependencies and utilities
 RUN apk update && apk add --no-cache \
-    php81 \
-    php81-fpm \
-    php81-mysqli \
-    php81-curl \
-    php81-json \
-    php81-zip \
-    php81-gd \
-    php81-mbstring \
-    php81-xml \
-    php81-session \
-    php81-opcache \
-    php81-phar \
-    php81-pecl-redis \
-    php81-ctype \
-	php81-ftp \ 
+    php82 \
+    php82-fpm \
+    php82-mysqli \
+    php82-curl \
+    php82-json \
+    php82-zip \
+    php82-gd \
+    php82-mbstring \
+    php82-xml \
+    php82-session \
+    php82-opcache \
+    php82-phar \
+    php82-pecl-redis \
+    php82-ctype \
+	php82-ftp \ 
     mariadb-client \
     curl \
     bash \
-    && ln -s /usr/bin/php81 /usr/bin/php
+    && ln -s /usr/bin/php82 /usr/bin/php
 
 # Create the www-data user and add it to the existing www-data group
 RUN adduser -S -G www-data www-data

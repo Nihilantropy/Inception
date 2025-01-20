@@ -10,6 +10,23 @@ from http.server import HTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 from prometheus_client import start_http_server, Counter, Gauge
 
+def display_art():
+    print(r"""
+          
+
+ ▄▄▄       ██▓     ██▓▓█████  ███▄    █ ▓█████   ▄████   ▄████   ██████ 
+▒████▄    ▓██▒    ▓██▒▓█   ▀  ██ ▀█   █ ▓█   ▀  ██▒ ▀█▒ ██▒ ▀█▒▒██    ▒ 
+▒██  ▀█▄  ▒██░    ▒██▒▒███   ▓██  ▀█ ██▒▒███   ▒██░▄▄▄░▒██░▄▄▄░░ ▓██▄   
+░██▄▄▄▄██ ▒██░    ░██░▒▓█  ▄ ▓██▒  ▐▌██▒▒▓█  ▄ ░▓█  ██▓░▓█  ██▓  ▒   ██▒
+ ▓█   ▓██▒░██████▒░██░░▒████▒▒██░   ▓██░░▒████▒░▒▓███▀▒░▒▓███▀▒▒██████▒▒
+ ▒▒   ▓▒█░░ ▒░▓  ░░▓  ░░ ▒░ ░░ ▒░   ▒ ▒ ░░ ▒░ ░ ░▒   ▒  ░▒   ▒ ▒ ▒▓▒ ▒ ░
+  ▒   ▒▒ ░░ ░ ▒  ░ ▒ ░ ░ ░  ░░ ░░   ░ ▒░ ░ ░  ░  ░   ░   ░   ░ ░ ░▒  ░ ░
+  ░   ▒     ░ ░    ▒ ░   ░      ░   ░ ░    ░   ░ ░   ░ ░ ░   ░ ░  ░  ░  
+      ░  ░    ░  ░ ░     ░  ░         ░    ░  ░      ░       ░       ░  
+                                                                        
+
+    """)
+
 class DualStackServer(HTTPServer):
     def server_bind(self):
         # Suppress exception when protocol is IPv4
@@ -69,6 +86,7 @@ def serve(root, port, metrics_port):
         httpd.server_close()
 
 if __name__ == "__main__":
+    display_art()
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--port", help="port to listen on", default=8060, type=int)
     parser.add_argument("-m", "--metrics-port", help="port for Prometheus metrics", default=8000, type=int)
@@ -78,7 +96,3 @@ if __name__ == "__main__":
     args = parser.parse_args()
     serve(args.root, args.port, args.metrics_port)
     
-def display_art():
-    print(r"""
-
-    """)

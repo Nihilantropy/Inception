@@ -37,7 +37,6 @@ fi
 echo "✅ Dependencies installed"
 
 echo "4. Building Gatsby site..."
-gatsby clean
 gatsby build
 if [ ! -d "/app/public" ]; then
     echo "❌ ERROR: Build failed - public directory not found!"

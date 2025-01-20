@@ -83,11 +83,6 @@ fi
 
 echo "=== Database setup complete. Starting PHP-FPM... ==="
 
-# Start PHP-FPM
-php-fpm81 -F & 
-
-# Wait a moment for PHP-FPM to start
-sleep 2
 
 cat << "EOF"
 
@@ -100,5 +95,5 @@ cat << "EOF"
 
 EOF
 
-# Wait for PHP-FPM process
-wait
+# Start PHP-FPM
+php-fpm82 -F

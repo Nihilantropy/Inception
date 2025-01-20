@@ -20,7 +20,11 @@ else
     echo "✅ WP-CLI already installed"
 fi
 
-echo "2. Setting initial permissions..."
+echo "2. Preparing web root directory..."
+mkdir -p /var/www/html
+cd /var/www/html
+
+echo "3. Setting initial permissions..."
 echo "- Setting ownership of web root..."
 chown -R www-data:www-data /var/www/html
 echo "- Setting directory permissions..."
@@ -28,10 +32,6 @@ find /var/www/html -type d -exec chmod 755 {} \;
 echo "- Setting file permissions..."
 find /var/www/html -type f -exec chmod 644 {} \;
 echo "✅ Initial permission are set correctly"
-
-echo "3. Preparing web root directory..."
-mkdir -p /var/www/html
-cd /var/www/html
 
 echo "4. Installing WordPress core..."
 if [ ! -f "wp-load.php" ]; then
@@ -107,13 +107,14 @@ fi
 echo "8. Setting final permissions..."
 echo "- Setting wp-content permissions..."
 chmod -R 775 /var/www/html/wp-content
+chown -R www-data:www-data /var/www/html/wp-content
 echo "✅ All permissions set correctly"
 
 echo "9. Configuring PHP-FPM..."
 echo "- Setting PHP-FPM user and group..."
-sed -i -r 's|^user = .*$|user = www-data|' /etc/php81/php-fpm.d/www.conf
-sed -i -r 's|^group = .*$|group = www-data|' /etc/php81/php-fpm.d/www.conf
-sed -i -r 's|listen = 127.0.0.1:9000|listen = 0.0.0.0:9000|' /etc/php81/php-fpm.d/www.conf
+sed -i -r 's|^user = .*$|user = www-data|' /etc/php82/php-fpm.d/www.conf
+sed -i -r 's|^group = .*$|group = www-data|' /etc/php82/php-fpm.d/www.conf
+sed -i -r 's|listen = 127.0.0.1:9000|listen = 0.0.0.0:9000|' /etc/php82/php-fpm.d/www.conf
 
 echo "- Creating PHP-FPM runtime directory..."
 mkdir -p /run/php

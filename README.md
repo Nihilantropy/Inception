@@ -1,3 +1,5 @@
+![Inception Art](images/inception-art.png)
+
 <!--=====================================
 =           INTRODUCTION              =
 ======================================-->
@@ -33,6 +35,16 @@ A comprehensive guide to building a containerized web infrastructure.
      - [Traditional Docker vs. Inception Approach](#traditional-docker-vs-inception-approach)
      - [Why Build From Scratch?](#why-build-from-scratch)
      - [Project Implementation](#project-implementation)
+   - [Process Management](#docker-process-management-and-pid-1-)
+     - [Understanding PID 1](#understanding-pid-1-in-docker-)
+     - [Why PID 1 Matters](#why-pid-1-matters-)
+     - [Implementation Best Practices](#our-implementation-best-practices-)
+     - [Testing Implementation](#testing-our-implementation-)
+   - [ENTRYPOINT vs CMD](#entrypoint-vs-cmd-deep-dive-)
+     - [Understanding Differences](#understanding-the-differences)
+     - [Common Patterns](#common-patterns)
+     - [Project Examples](#inception-project-examples)
+     - [Best Practices](#best-practices-summary-)
 
 3. [All Alpine](#all-alpine-️)
    - [The Alpine Choice](#the-alpine-choice)
@@ -276,14 +288,14 @@ docker pull mysql:latest
 **Inception Approach:**
 ```dockerfile
 # Building custom WordPress image
-FROM alpine:3.19
+FROM alpine:3.20
 RUN apk add --no-cache php php-fpm wordpress
 # Custom configurations...
 ```
 
 <!-- <ADD IMAGE: "Visual comparison between Traditional Docker Approach (pulling images) vs Inception Approach (building from scratch), showing the layers and components involved in each approach">
 
-![Docker Approaches](images/docker-approaches.png) -->
+![Docker Approaches](images/docker-approaches.png) circa 700mb wordpress:lates, circa 140mb wordpress custom--> 
 
 ### Why Build From Scratch?
 
@@ -301,6 +313,232 @@ In Inception, we:
 - Implement proper networking and volume management
 
 This approach provides valuable learning opportunities and better control over the infrastructure, though in production environments, validated official images might be preferred for their reliability and maintenance.
+
+<!--=====================================
+=         PROCESS MANAGEMENT          =
+======================================-->
+## Docker Process Management and PID 1 🔄
+
+## Understanding PID 1 in Docker 🎯
+
+In Docker containers, the first process that starts (PID 1) plays a crucial role in process management and container lifecycle. Unlike traditional Linux systems where systemd or init handles process management, in containers, your application or a designated init process must handle these responsibilities.
+
+### Why PID 1 Matters 🤔
+
+1. **Signal Handling**
+   - PID 1 must properly handle process signals (SIGTERM, SIGINT, etc.)
+   - Responsible for forwarding signals to child processes
+   - Critical for graceful container shutdown
+
+2. **Zombie Process Prevention**
+   - Must reap zombie (defunct) processes
+   - Prevent resource leaks
+   - Maintain container health
+
+3. **Container Lifecycle**
+   - Determines container state
+   - Manages application startup
+   - Handles cleanup on shutdown
+
+## Our Implementation: Best Practices ✅
+
+In our Inception project, we implement a robust solution for process management that ensures proper signal handling and clean container lifecycle management. Here's how:
+
+### 1. ENTRYPOINT in Exec Form
+
+We use the exec form of ENTRYPOINT in our Dockerfiles:
+```dockerfile
+ENTRYPOINT ["/init.sh"]
+```
+
+This is crucial because:
+- Runs the init script directly, not through a shell
+- Makes our init script PID 1 initially
+- Ensures proper signal propagation
+- Prevents additional shell processes
+
+### 2. Init Scripts with exec
+
+Our init scripts end with the `exec` command:
+```bash
+#!/bin/sh
+set -e
+
+# Configuration and setup...
+
+# Replace shell with the main process
+exec nginx -g "daemon off;"
+```
+
+This approach is ideal because:
+- The `exec` command replaces the shell process with the service process
+- The service becomes PID 1 directly
+- No shell remains in between Docker and the service
+- Professional services (NGINX, PHP-FPM, MariaDB) handle signals properly
+
+### Why Our Approach Works Well 🎯
+
+1. **No Shell Interference**
+   - Using exec form of ENTRYPOINT avoids shell wrapping
+   - `exec` in scripts ensures direct process execution
+   - No intermediate shell processes remain
+
+2. **Professional Service Integration**
+   - Services like NGINX, MariaDB, and PHP-FPM have built-in signal handling
+   - They manage their own child processes
+   - They handle graceful shutdowns properly
+
+3. **Clean Process Tree**
+   ```
+   PID 1 (Service Process)
+   └── Child processes (if any)
+   ```
+   No unnecessary layers or shell processes
+
+4. **Direct Signal Propagation**
+   ```
+   Docker -> Service Process (PID 1)
+              └── Clean shutdown handling
+   ```
+   No signal forwarding needed
+
+### Examples from Our Services
+
+1. **NGINX**
+```bash
+exec nginx -g "daemon off;"
+```
+NGINX receives signals directly and handles graceful shutdown of worker processes.
+
+2. **PHP-FPM**
+```bash
+exec php-fpm82 -F
+```
+PHP-FPM manages its worker pool and handles signals for graceful worker shutdown.
+
+3. **MariaDB**
+```bash
+exec mysqld --datadir="$MARIADB_DATA_DIR" --user=mysql
+```
+MariaDB handles database connections and ensures proper cleanup on shutdown.
+
+### Why We Don't Need Additional Signal Handling
+
+Despite what some examples show, we don't need explicit signal handling in our init scripts because:
+
+1. We use the exec form of ENTRYPOINT: `ENTRYPOINT ["/init.sh"]`
+2. Our init scripts use `exec` to replace themselves with the service
+
+The key is that there's never a shell sitting between Docker and our service processes. When Docker sends a signal, it goes directly to the service process, which knows how to handle it properly.
+
+## Testing Our Implementation ✅
+
+You can verify our implementation works correctly by:
+
+```bash
+# Graceful shutdown test
+docker-compose stop
+
+# Check logs for clean shutdown
+docker-compose logs nginx
+
+# Verify no zombie processes
+docker top nginx
+```
+
+This setup provides clean process management and proper signal handling while maintaining simplicity and reliability. 🚀
+
+## ENTRYPOINT vs CMD Deep Dive 🔍
+
+### Understanding the Differences
+
+1. **ENTRYPOINT**
+   - Defines the executable to run
+   - Hard to override (requires --entrypoint flag)
+   - Receives CMD as arguments
+   - Better for "executable" containers
+
+2. **CMD**
+   - Provides default arguments
+   - Easily overridden at runtime
+   - Can be completely replaced
+   - Flexible for general use
+
+### Common Patterns
+
+1. **Executable with Default Arguments**
+```dockerfile
+ENTRYPOINT ["nginx"]
+CMD ["-g", "daemon off;"]
+```
+- ENTRYPOINT defines the executable
+- CMD provides default arguments
+- Can override arguments but not executable
+
+2. **Single Command with Init**
+```dockerfile
+ENTRYPOINT ["/init.sh"]
+```
+- Script handles all setup and execution
+- No default arguments needed
+- Clear entry point for container
+
+3. **Flexible Command**
+```dockerfile
+CMD ["php-fpm"]
+```
+- Can be completely overridden
+- Suitable for development containers
+- Maximum flexibility
+
+### Inception Project Examples
+
+1. **NGINX Container**
+```dockerfile
+COPY --chown=nginx:nginx ./tools/init.sh /init.sh
+RUN chmod +x /init.sh
+ENTRYPOINT ["/init.sh"]
+```
+- Uses init script for setup
+- Handles SSL configuration
+- Manages process lifecycle
+
+2. **Alien-Eggs Container**
+```dockerfile
+ENTRYPOINT [ "python3", "/app/src/serve.py" ]
+CMD ["--root", "/app/src", "--no-browser", "--port", "8060", "--metrics-port", "8000"]
+```
+- Direct process execution
+- Configuration via arguments
+- No complex initialization needed
+
+## Best Practices Summary 📋
+
+1. **Process Management**
+   - Use init scripts for complex services
+   - Implement proper signal handling
+   - Manage child processes effectively
+   - Handle cleanup on shutdown
+
+2. **ENTRYPOINT Usage**
+   - Use for primary executable
+   - Initialize environment if needed
+   - Handle signals properly
+   - Set up logging
+
+3. **CMD Considerations**
+   - Provide default arguments
+   - Allow runtime flexibility
+   - Consider development needs
+   - Enable easy overrides
+
+4. **General Guidelines**
+   - One main process per container
+   - Proper signal handling
+   - Clear process ownership
+   - Efficient cleanup procedures
+
+Following these practices ensures robust container operation, proper process management, and reliable service execution in our infrastructure. 🚀
 
 <!--=====================================
 =         ALPINE LINUX                =
@@ -341,7 +579,7 @@ In Inception, we had the choice between Debian and Alpine Linux as base images f
 ### Base Image Declaration
 ```dockerfile
 # All our Dockerfiles start with
-FROM alpine:3.19
+FROM alpine:3.20
 ```
 
 ### Package Installation Pattern
@@ -403,6 +641,8 @@ While Alpine is excellent for our use case, it's important to note:
 The choice of Alpine aligns perfectly with Inception's goals of understanding container infrastructure while maintaining efficient resource usage and security. 🎯
 
 # Core Services: NGINX 🚀
+
+![NGINX ART](images/nginx-art.png)
 
 <!--=====================================
 =            INTRODUCTION             =
@@ -543,7 +783,7 @@ nginx:
 ### 2. Dockerfile Analysis
 
 ```dockerfile
-FROM alpine:3.19
+FROM alpine:3.20
 
 RUN apk add --no-cache \
     nginx \
@@ -630,6 +870,8 @@ cat /srcs/requirements/nginx/tools/init.sh
 
 # Core Services: WordPress 🎨
 
+![WORDPRESS ART](images/wordpress-art.png)
+
 <!--=====================================
 =            INTRODUCTION             =
 ======================================-->
@@ -706,7 +948,7 @@ wordpress:
       - mariadb
     restart: on-failure
     healthcheck:
-      test: ["CMD", "php-fpm81", "-t"]
+      test: ["CMD", "php-fpm82", "-t"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -739,28 +981,28 @@ wordpress:
 ### 2. Dockerfile Analysis
 
 ```dockerfile
-FROM alpine:3.19
+FROM alpine:3.20
 
 RUN apk update && apk add --no-cache \
-    php81 \
-    php81-fpm \
-    php81-mysqli \
-    php81-curl \
-    php81-json \
-    php81-zip \
-    php81-gd \
-    php81-mbstring \
-    php81-xml \
-    php81-session \
-    php81-opcache \
-    php81-phar \
-    php81-pecl-redis \
-    php81-ctype \
-	php81-ftp \ 
+    php82 \
+    php82-fpm \
+    php82-mysqli \
+    php82-curl \
+    php82-json \
+    php82-zip \
+    php82-gd \
+    php82-mbstring \
+    php82-xml \
+    php82-session \
+    php82-opcache \
+    php82-phar \
+    php82-pecl-redis \
+    php82-ctype \
+    php82-ftp \ 
     mariadb-client \
     curl \
     bash \
-    && ln -s /usr/bin/php81 /usr/bin/php
+    && ln -s /usr/bin/php82 /usr/bin/php
 
 RUN adduser -S -G www-data www-data
 
@@ -783,10 +1025,10 @@ ENTRYPOINT ["/usr/local/bin/init-wp-config.sh"]
 #### Package Analysis:
 
 1. **PHP Core & Extensions**:
-   - `php81-fpm`: FastCGI Process Manager
-   - `php81-mysqli`: MySQL database support
-   - `php81-pecl-redis`: Redis integration
-   - `php81-ftp`: FTP integration
+   - `php82-fpm`: FastCGI Process Manager
+   - `php82-mysqli`: MySQL database support
+   - `php82-pecl-redis`: Redis integration
+   - `php82-ftp`: FTP integration
    - Various required PHP extensions
 
 2. **Additional Tools**:
@@ -853,9 +1095,9 @@ Using the `cat` command ensure proper ENV `var expansion`.
 by changing the default `user`, `group` and `listen` interface to our needs
 
 ```bash
-sed -i -r 's|^user = .*$|user = www-data|' /etc/php81/php-fpm.d/www.conf
-sed -i -r 's|^group = .*$|group = www-data|' /etc/php81/php-fpm.d/www.conf
-sed -i -r 's|listen = 127.0.0.1:9000|listen = 0.0.0.0:9000|' /etc/php81/php-fpm.d/www.conf
+sed -i -r 's|^user = .*$|user = www-data|' /etc/php82/php-fpm.d/www.conf
+sed -i -r 's|^group = .*$|group = www-data|' /etc/php82/php-fpm.d/www.conf
+sed -i -r 's|listen = 127.0.0.1:9000|listen = 0.0.0.0:9000|' /etc/php82/php-fpm.d/www.conf
 ```
 
 <!--=====================================
@@ -868,7 +1110,7 @@ sed -i -r 's|listen = 127.0.0.1:9000|listen = 0.0.0.0:9000|' /etc/php81/php-fpm.
    - WordPress files: 644 (owned by www-data:www-data)
    - Directories: 755 (owned by www-data:www-data)
    - Sensitive files: 600 (owned by www-data:www-data)
-   - wp-content: 775 (allows runtime modifications)
+   - wp-content: 775 (owned by www-data:www-data)
 
    The www-data ownership is essential because:
    - NGINX worker processes run as www-data
@@ -890,12 +1132,28 @@ sed -i -r 's|listen = 127.0.0.1:9000|listen = 0.0.0.0:9000|' /etc/php81/php-fpm.
    - Limited login attempts
 
 <!--=====================================
-=         PERFORMANCE TUNING          =
+=         CORE CONFIGURATION            =
 ======================================-->
 
-## Performance Optimization ⚡
+## Core configuration ⚡
 
-1. **Redis Integration**:
+1. **Database Setup & Optimization**:
+   - Database initialization in setup_db.sh:
+     - Properly structured users table creation
+     - Default user setup
+     - Connection verification
+   - MariaDB connection configuration in wp-config.php:
+     ```php
+     define('DB_NAME', '${MYSQL_DATABASE}');
+     define('DB_USER', '${MYSQL_USER}');
+     define('DB_PASSWORD', '${MYSQL_PASSWORD}');
+     define('DB_HOST', '${MYSQL_HOST}');
+     define('DB_CHARSET', 'utf8');
+     define('DB_COLLATE', '');
+     ```
+   - Connection retry mechanism in scripts
+
+2. **Redis Integration**:
    - Redis plugin installation and configuration in init-wordpress.sh:
      ```bash
      wp plugin install redis-cache --activate
@@ -913,18 +1171,20 @@ sed -i -r 's|listen = 127.0.0.1:9000|listen = 0.0.0.0:9000|' /etc/php81/php-fpm.
      define('WP_REDIS_MAXTTL', 86400);
      ```
 
-2. **Database Setup & Optimization**:
-   - Database initialization in setup_db.sh:
-     - Properly structured users table creation
-     - Default user setup
-     - Connection verification
-   - MariaDB connection configuration in wp-config.php:
+3. **FTP integration**
+   - Thanks to the FTP configuration in the wp-config.php we can connect to the FTP (SSL) server to download and install plugins in our wordpress site
+   - Redis configuration in wp-config.php:
      ```php
-     define('DB_HOST', '${MYSQL_HOST}');
-     define('DB_CHARSET', 'utf8');
-     define('DB_COLLATE', '');
-     ```
-   - Connection retry mechanism in scripts
+    define('FTP_USER', '${FTP_USER}');
+    define('FTP_PASS', '${FTP_PASS}');
+    define('FTP_HOST', 'ftp:21');
+    define('FS_METHOD', 'direct');
+    define('FTP_BASE', '/var/www/html/');
+    define('FTP_CONTENT_DIR', '/var/www/html/wp-content/');
+    define('FTP_PLUGIN_DIR', '/var/www/html/wp-content/plugins/');
+    define('FTP_SSL', true);
+    define('FTP_VERIFY_SSL', false);
+    ```
 
 ### Take a look :mag:!
 ```bash
@@ -1045,7 +1305,7 @@ mariadb:
 ### 2. Dockerfile Analysis
 
 ```dockerfile
-FROM alpine:3.19
+FROM alpine:3.20
 
 ENV MARIADB_DATA_DIR=/var/lib/mysql
 
@@ -1058,12 +1318,12 @@ RUN apk update && apk add --no-cache \
 RUN mkdir -p /run/mysqld && chown -R mysql:mysql /run/mysqld
 
 COPY ./conf/my.cnf /etc/my.cnf
-COPY ./tools/init.sh /docker-entrypoint-initdb.d/init.sh
-RUN chmod +x /docker-entrypoint-initdb.d/init.sh
+COPY ./tools/init.sh /init.sh
+RUN chmod +x /init.sh
 
 EXPOSE 3306
 
-CMD ["/docker-entrypoint-initdb.d/init.sh"]
+CMD ["/init.sh"]
 ```
 
 #### Package Analysis:
@@ -1139,16 +1399,32 @@ The initialization script (`init.sh`) handles database setup:
 ```bash
 #!/bin/sh
 
+echo "Creating initdb.d directory..."
+mkdir -p initdb.d
+echo "✅ Directory created succesfully!"
+
 # Generate initialization SQL file
-cat << EOF > /docker-entrypoint-initdb.d/init.sql
+echo "Creating init.sql file for db and user setup..."
+cat << "EOF" > /initdb.d/init.sql
+-- Create the specified database
 CREATE DATABASE IF NOT EXISTS $MYSQL_DATABASE;
+
+-- Create a non-root user and grant privileges
 CREATE USER IF NOT EXISTS '$MYSQL_USER'@'%' IDENTIFIED BY '$MYSQL_PASSWORD';
 GRANT ALL PRIVILEGES ON $MYSQL_DATABASE.* TO '$MYSQL_USER'@'%';
+
+-- Set the root password
+ALTER USER 'root'@'localhost' IDENTIFIED BY '$MYSQL_ROOT_PASSWORD';
+
+-- Flush privileges to apply changes
 FLUSH PRIVILEGES;
 EOF
 
-# Start MariaDB with initialization
-exec mysqld --datadir="$MARIADB_DATA_DIR" --user=mysql --init-file=/docker-entrypoint-initdb.d/init.sql
+echo "✅ init.sql created succesfully!"
+
+echo "======== Starting Mariadb ========"
+
+exec mysqld --datadir="$MARIADB_DATA_DIR" --user=mysql --init-file=/initdb.d/init.sql
 ```
 
 #### Process Breakdown:
@@ -1330,21 +1606,21 @@ adminer:
 ### 2. Dockerfile Analysis
 
 ```dockerfile
-FROM alpine:3.19
+FROM alpine:3.20
 
 RUN apk update && apk add --no-cache \
     apache2 \
-    php81 \
-    php81-apache2 \
-    php81-curl \
-    php81-cli \
-    php81-mysqli \
-    php81-gd \
-    php81-session \
-    php81-pdo \
-    php81-pdo_mysql \
-    php81-json \
-    php81-mbstring \
+    php82 \
+    php82-apache2 \
+    php82-curl \
+    php82-cli \
+    php82-mysqli \
+    php82-gd \
+    php82-session \
+    php82-pdo \
+    php82-pdo_mysql \
+    php82-json \
+    php82-mbstring \
     mariadb-client \
     wget
 
@@ -1366,15 +1642,15 @@ CMD ["/init.sh"]
 
 1. **Core Components**:
    - `apache2`: Web server
-   - `php81`: PHP runtime
+   - `php82`: PHP runtime
    - Various PHP extensions for functionality
    - `mariadb-client`: Database connectivity
 
 2. **PHP Extensions**:
-   - `php81-mysqli`: MySQL/MariaDB support
-   - `php81-pdo`: Database abstraction
-   - `php81-session`: Session management
-   - `php81-json`: JSON processing
+   - `php82-mysqli`: MySQL/MariaDB support
+   - `php82-pdo`: Database abstraction
+   - `php82-session`: Session management
+   - `php82-json`: JSON processing
 
 3. **Security Setup**:
    - Creates www-data user/group
@@ -1447,7 +1723,7 @@ echo "5. Configuring PHP..."
 sed -i \
     -e 's/;extension=pdo_mysql/extension=pdo_mysql/' \
     -e 's/;extension=mysqli/extension=mysqli/' \
-    /etc/php81/php.ini
+    /etc/php82/php.ini
 
 echo "6. Setting up permissions..."
 chown -R www-data:www-data /run/apache2 /var/www/html /var/log/apache2
@@ -1608,7 +1884,7 @@ redis:
 ### 2. Dockerfile Analysis
 
 ```dockerfile
-FROM alpine:3.19
+FROM alpine:3.20
 
 RUN apk update && apk add --no-cache redis
 
@@ -1774,7 +2050,7 @@ ftp:
 ### 2. Dockerfile Analysis
 
 ```dockerfile
-FROM alpine:3.19
+FROM alpine:3.20
 
 RUN apk update && \
     apk add --no-cache \
@@ -1955,7 +2231,7 @@ gatsby-app:
 ### Node.js Environment Setup
 
 ```dockerfile
-FROM alpine:3.19
+FROM alpine:3.20
 
 WORKDIR /app
 
@@ -2054,7 +2330,7 @@ alien-eggs:
 ### Container Setup
 
 ```dockerfile
-FROM alpine:3.19
+FROM alpine:3.20
 
 RUN apk update && apk add --no-cache \
     python3 \
@@ -2065,24 +2341,15 @@ WORKDIR /app
 
 COPY src/ /app/src/
 
-COPY tools/init.sh /app/init.sh
-RUN chmod +x /app/init.sh
+RUN chmod +x /app/src/serve.py
+
+ENV DOCKER_CONTAINER=1
+ENV PYTHONUNBUFFERED=1
 
 EXPOSE 8060 8000
 
-WORKDIR /app/src
-
-CMD ["/app/init.sh"]
-```
-
-The init.sh script does some initial checks then start the `python server`:
-
-```Bash
-exec python3 serve.py \
-    --root /app/src \
-    --no-browser \
-    --port 8060 \
-    --metrics-port 8000
+ENTRYPOINT [ "python3", "/app/src/serve.py" ]
+CMD ["--root", "/app/src", "--no-browser", "--port", "8060", "--metrics-port", "8000"]
 ```
 
 ### Python Server Implementation
@@ -2216,7 +2483,7 @@ cadvisor:
 ### Container Setup
 
 ```dockerfile
-FROM alpine:3.19
+FROM alpine:3.20
 
 ENV VERSION="v0.49.2"
 
@@ -2396,7 +2663,7 @@ prometheus:
 ### Dockerfile Analysis
 
 ```dockerfile
-FROM alpine:3.19
+FROM alpine:3.20
 
 # Install necessary packages
 RUN apk add --no-cache \
@@ -2648,7 +2915,7 @@ grafana:
 ### Dockerfile Analysis
 
 ```dockerfile
-FROM alpine:3.19
+FROM alpine:3.20
 
 RUN apk update && apk add --no-cache \
     grafana \
@@ -2706,13 +2973,20 @@ For additional dashboards, you can explore the [Grafana Dashboard Marketplace](h
 datasources:
   - name: Prometheus
     type: prometheus
+    uid: prometheus
     access: proxy
     url: http://prometheus:9090
     isDefault: true
     version: 1
     editable: true
+    jsonData:
+      timeInterval: "5s"
+      queryTimeout: "30s"
+      httpMethod: "POST"
+    secureJsonData:
+      basicAuthPassword: "${PROMETHEUS_PASSWORD}"
     basicAuth: true
-    basicAuthUser: admin
+    basicAuthUser: "admin"
 ```
 
 <!--=====================================

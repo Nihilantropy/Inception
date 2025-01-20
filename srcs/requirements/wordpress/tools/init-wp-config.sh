@@ -65,7 +65,7 @@ define( 'WP_REDIS_MAXTTL', 86400 );
 define('FTP_USER', '${FTP_USER}');
 define('FTP_PASS', '${FTP_PASS}');
 define('FTP_HOST', 'ftp:21');
-define('FS_METHOD', 'ftpsext');
+define('FS_METHOD', 'direct');
 define('FTP_BASE', '/var/www/html/');
 define('FTP_CONTENT_DIR', '/var/www/html/wp-content/');
 define('FTP_PLUGIN_DIR', '/var/www/html/wp-content/plugins/');

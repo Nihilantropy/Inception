@@ -1,5 +1,5 @@
 # Use Alpine as the base image
-FROM alpine:3.19
+FROM alpine:3.20
 
 # Set environment variables
 ENV MARIADB_DATA_DIR=/var/lib/mysql
@@ -18,11 +18,11 @@ RUN mkdir -p /run/mysqld && chown -R mysql:mysql /run/mysqld
 COPY ./conf/my.cnf /etc/my.cnf
 
 # Add initialization script
-COPY ./tools/init.sh /docker-entrypoint-initdb.d/init.sh
-RUN chmod +x /docker-entrypoint-initdb.d/init.sh
+COPY ./tools/init.sh /init.sh
+RUN chmod +x /init.sh
 
 # Expose the MariaDB port
 EXPOSE 3306
 
 # Initialize and start MariaDB
-CMD ["/docker-entrypoint-initdb.d/init.sh"]
+CMD ["/init.sh"]

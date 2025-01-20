@@ -24,7 +24,7 @@ INCEPTION_NETWORKS = $(FOLDER_PREFIX)backend-db \
                     $(FOLDER_PREFIX)proxy \
                     $(FOLDER_PREFIX)monitoring
 
-all: setup images start show art
+all: setup images up show art
 
 setup: setup_volumes
 
@@ -41,7 +41,7 @@ images:
 	@docker-compose -f $(COMPOSE_FILE) build --parallel
 	@echo "Images build done!"
 
-start:
+up:
 	@echo "Starting containers..."
 	@docker-compose -f $(COMPOSE_FILE) up -d
 	@echo "Containers started!"
@@ -58,10 +58,13 @@ show:
 	@echo
 
 stop:
-	@docker-compose -f $(COMPOSE_FILE) down -v --rmi all
+	@docker-compose -f $(COMPOSE_FILE) stop
+
+start:
+	@docker-compose -f $(COMPOSE_FILE) start
 
 down:
-	@docker-compose -f $(COMPOSE_FILE) down
+	@docker-compose -f $(COMPOSE_FILE) down -v --rmi all
 
 restart:
 	@docker-compose -f $(COMPOSE_FILE) restart
@@ -106,4 +109,4 @@ art:
                                                                                                         
 
 
-.PHONY: all setup setup_volumes setup_docker_volumes setup_monitoring generate_certs setup_grafana_dirs images start show stop down restart re prune
+.PHONY: all setup setup_volumes setup_docker_volumes setup_monitoring generate_certs setup_grafana_dirs images start show stop up down restart re prune

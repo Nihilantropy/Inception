@@ -49,15 +49,21 @@ echo "✅ Virtual host configuration created"
 
 echo "4. Configuring Apache modules and settings..."
 echo "- Updating Apache configuration..."
+
+echo "Listen 8080" > /etc/apache2/conf.d/port.conf
+
 if ! sed -i \
     -e 's/#LoadModule rewrite_module/LoadModule rewrite_module/' \
-    -e 's/Listen 80/Listen 8080/' \
     -e 's/User apache/User www-data/' \
     -e 's/Group apache/Group www-data/' \
     /etc/apache2/httpd.conf; then
     echo "❌ ERROR: Failed to configure Apache!"
     exit 1
 fi
+
+echo "- Testing configuration..."
+httpd -t
+
 echo "✅ Apache configuration updated"
 
 echo "5. Configuring PHP..."
@@ -65,7 +71,7 @@ echo "- Enabling required PHP extensions..."
 if ! sed -i \
     -e 's/;extension=pdo_mysql/extension=pdo_mysql/' \
     -e 's/;extension=mysqli/extension=mysqli/' \
-    /etc/php81/php.ini; then
+    /etc/php82/php.ini; then
     echo "❌ ERROR: Failed to configure PHP!"
     exit 1
 fi

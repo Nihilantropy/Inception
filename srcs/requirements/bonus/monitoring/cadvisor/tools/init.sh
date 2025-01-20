@@ -7,7 +7,6 @@ echo "1. Setting up permissions..."
 # Ensure docker socket has correct permissions
 if [ -S "/var/run/docker.sock" ]; then
     chmod 666 /var/run/docker.sock
-    chown root:docker /var/run/docker.sock
 fi
 
 # Ensure kmsg is accessible

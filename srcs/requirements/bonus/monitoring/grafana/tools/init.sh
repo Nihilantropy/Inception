@@ -165,14 +165,10 @@ echo "4. Creating datasource configuration..."
 cat > /etc/grafana/provisioning/datasources/prometheus.yml << EOF
 apiVersion: 1
 
-deleteDatasources:
-  - name: Prometheus
-    orgId: 1
-
 datasources:
   - name: Prometheus
     type: prometheus
-    uid: prometheus
+    uid: Prometheus
     access: proxy
     url: http://prometheus:9090
     isDefault: true
@@ -182,10 +178,6 @@ datasources:
       timeInterval: "5s"
       queryTimeout: "30s"
       httpMethod: "POST"
-      manageAlerts: true
-      prometheusType: Prometheus
-      prometheusVersion: 3.0.1
-      exemplarTraceIdDestinations: []
     secureJsonData:
       basicAuthPassword: ${PROMETHEUS_PASSWORD}
     basicAuth: true

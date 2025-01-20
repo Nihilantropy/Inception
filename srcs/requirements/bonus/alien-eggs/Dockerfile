@@ -1,4 +1,4 @@
-FROM alpine:3.19
+FROM alpine:3.20
 
 # Install Python and dependencies
 RUN apk update && apk add --no-cache \
@@ -12,10 +12,14 @@ WORKDIR /app
 # Copy only the source files first
 COPY src/ /app/src/
 
+RUN chmod +x /app/src/serve.py
+
+ENV DOCKER_CONTAINER=1
 ENV PYTHONUNBUFFERED=1
 
 # Expose the ports
 EXPOSE 8060 8000
 
 # Start the server
-CMD ["python3", "/app/src/serve.py", "--root", "/app/src", "--no-browser", "--port", "8060", "--metrics-port", "8000"]
+ENTRYPOINT [ "python3", "/app/src/serve.py" ]
+CMD ["--root", "/app/src", "--no-browser", "--port", "8060", "--metrics-port", "8000"]
