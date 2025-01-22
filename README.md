@@ -12,7 +12,13 @@ A comprehensive guide to building a containerized web infrastructure.
 ======================================-->
 # Table of Contents 📚
 
-1. [Introduction to Inception](#introduction-to-inception)
+1. [Prerequisites](#prerequisites-)
+   - [System Requirements](#system-requirements)
+   - [Software Dependencies](#software-dependencies)
+   - [Environment Setup](#environment-setup)
+   - [Installation Steps](#installation-steps)
+
+2. [Introduction to Inception](#introduction-to-inception)
    - [What is Inception?](#what-is-inception)
    - [Project Goals](#project-goals-)
    - [Architecture Overview](#architecture-overview-️)
@@ -27,7 +33,7 @@ A comprehensive guide to building a containerized web infrastructure.
      - [Configuration](#5-configuration)
    - [Project Structure](#project-structure-)
 
-2. [Docker Fundamentals](#docker-fundamentals-)
+3. [Docker Fundamentals](#docker-fundamentals-)
    - [What is Docker?](#what-is-docker)
    - [Why Docker?](#why-docker-)
    - [Key Docker Components](#key-docker-components-)
@@ -46,7 +52,7 @@ A comprehensive guide to building a containerized web infrastructure.
      - [Project Examples](#inception-project-examples)
      - [Best Practices](#best-practices-summary-)
 
-3. [All Alpine](#all-alpine-️)
+4. [All Alpine](#all-alpine-️)
    - [The Alpine Choice](#the-alpine-choice)
    - [Why Alpine?](#why-alpine)
      - [Size Matters](#size-matters-)
@@ -56,7 +62,7 @@ A comprehensive guide to building a containerized web infrastructure.
    - [Impact on Services](#impact-on-services)
    - [Trade-offs and Considerations](#trade-offs-and-considerations)
 
-4. [Core Services](#core-services)
+5. [Core Services](#core-services)
    - [NGINX](#core-services-nginx-)
      - [What is NGINX?](#what-is-nginx-)
      - [Why NGINX?](#why-nginx-)
@@ -82,7 +88,7 @@ A comprehensive guide to building a containerized web infrastructure.
      - [Security Implementation](#security-implementation--1)
      - [Performance Optimization](#performance-optimization--1)
 
-5. [Bonus Services](#bonus-services)
+6. [Bonus Services](#bonus-services)
    - [Adminer](#bonus-services-adminer-️)
      - [What is Adminer?](#what-is-adminer-)
      - [Why Adminer?](#why-adminer-)
@@ -113,7 +119,7 @@ A comprehensive guide to building a containerized web infrastructure.
      - [Technical Setup](#technical-setup-)
      - [Monitoring Features](#monitoring-features-)
 
-6. [Additional Services](#additional-services)
+7. [Additional Services](#additional-services)
    - [cAdvisor](#monitoring-services-cadvisor-)
      - [What is cAdvisor?](#what-is-cadvisor-)
      - [Why cAdvisor?](#why-cadvisor-)
@@ -131,12 +137,96 @@ A comprehensive guide to building a containerized web infrastructure.
      - [Implementation](#implementation--3)
      - [Security and Maintenance](#security-and-maintenance-️)
 
-7. [Conclusion](#Conclusion-)
+8. [Conclusion](#Conclusion-)
    - [Project Overview](#project-overview)
    - [Key Takeaways](#key-takeaways)
    - [Moving Forward](#moving-forward)
 
-8. [A Word from the container abyss](#a-word-from-the-abyss-)
+9. [A Word from the container abyss](#a-word-from-the-abyss-)
+
+---
+
+<!--=====================================
+=            PREREQUISITES              =
+======================================-->
+
+# Prerequisites 🔧
+
+Before diving into the Inception project, ensure your system meets all the necessary requirements and has the required software installed.
+
+## System Requirements
+
+- Linux-based operating system (Ubuntu 20.04 LTS recommended)
+- At least 4GB of RAM
+- At least 10GB of free disk space
+*Note: You could use docker-desktop, this is only a recommended setup. Initial configuration might be different*
+
+## Software Dependencies
+
+1. **Docker Engine**
+   ```bash
+   # For Ubuntu
+   sudo apt-get update
+   sudo apt-get install docker.io
+   ```
+
+2. **Docker Compose**
+   ```bash
+   sudo apt-get install docker-compose
+   ```
+
+3. **Make**
+   ```bash
+   sudo apt-get install make
+   ```
+
+## Environment Setup
+
+1. **Configure Hosts File**
+   
+   Add your domain to `/etc/hosts`. The domain should match the `DOMAIN_NAME` variable in your `/srcs/.env` file:
+   ```bash
+   sudo echo "127.0.0.1 ${DOMAIN_NAME}" >> /etc/hosts
+   ```
+
+   *⚠️ Note: The `.env` file should be located in the `/srcs` directory, at the same level as the `docker-compose.yml` file.*
+
+2. **Verify Docker Service**
+   ```bash
+   sudo systemctl start docker
+   sudo systemctl enable docker
+   ```
+
+3. **Add User to Docker Group** (optional, to run Docker without sudo)
+   ```bash
+   sudo usermod -aG docker ${USER}
+   newgrp docker
+   ```
+
+## Installation Steps
+
+1. **Clone the Repository**
+   ```bash
+   git clone https://github.com/Nihilantropy/Inception.git
+   ```
+
+2. **Navigate to Project Directory**
+   ```bash
+   cd Inception
+   ```
+
+3. **Start the Infrastructure**
+   ```bash
+   make
+   ```
+
+After running `make`, the script will:
+- Set up necessary directories
+- Build Docker images
+- Start all containers
+- Configure the services
+
+You can verify the installation by accessing the WordPress site at `https://${DOMAIN_NAME}`.
 
 ---
 
