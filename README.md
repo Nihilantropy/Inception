@@ -159,7 +159,6 @@ Before diving into the Inception project, ensure your system meets all the neces
 - Linux-based operating system (Ubuntu 20.04 LTS recommended)
 - At least 4GB of RAM
 - At least 10GB of free disk space
-*Note: You could use docker-desktop, this is only a recommended setup. Initial configuration might be different*
 
 ## Software Dependencies
 
@@ -227,6 +226,8 @@ After running `make`, the script will:
 - Configure the services
 
 You can verify the installation by accessing the WordPress site at `https://${DOMAIN_NAME}`.
+
+*⚠️ Note: You could use docker-desktop, this is only a recommended setup. Initial configuration might be different*
 
 ---
 
