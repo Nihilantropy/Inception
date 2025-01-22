@@ -1,3 +1,5 @@
+# Docker compose command definition
+DOCKER_COMPOSE = docker compose
 COMPOSE_FOLDER = ./srcs
 COMPOSE_FILE = $(COMPOSE_FOLDER)/docker-compose.yml
 DATA_PATH = $(HOME)/data
@@ -38,12 +40,12 @@ setup_volumes:
 
 images:
 	@echo "Building images..."
-	@docker-compose -f $(COMPOSE_FILE) build --parallel
+	@$(DOCKER_COMPOSE) -f $(COMPOSE_FILE) build --parallel
 	@echo "Images build done!"
 
 up:
 	@echo "Starting containers..."
-	@docker-compose -f $(COMPOSE_FILE) up -d
+	@$(DOCKER_COMPOSE) -f $(COMPOSE_FILE) up -d
 	@echo "Containers started!"
 
 show:
@@ -58,23 +60,23 @@ show:
 	@echo
 
 stop:
-	@docker-compose -f $(COMPOSE_FILE) stop
+	@$(DOCKER_COMPOSE) -f $(COMPOSE_FILE) stop
 
 start:
-	@docker-compose -f $(COMPOSE_FILE) start
+	@$(DOCKER_COMPOSE) -f $(COMPOSE_FILE) start
 
 down:
-	@docker-compose -f $(COMPOSE_FILE) down -v --rmi all
+	@$(DOCKER_COMPOSE) -f $(COMPOSE_FILE) down -v --rmi all
 
 restart:
-	@docker-compose -f $(COMPOSE_FILE) restart
+	@$(DOCKER_COMPOSE) -f $(COMPOSE_FILE) restart
 
 re: prune all
 
 prune:
 	@echo "Deleting all Inception-related resources..."
 	@echo "Stopping containers..."
-	@docker-compose -f $(COMPOSE_FILE) down -v 2>/dev/null || true
+	@$(DOCKER_COMPOSE) -f $(COMPOSE_FILE) down -v 2>/dev/null || true
 	@echo "Removing Inception containers..."
 	@for service in $(INCEPTION_SERVICES); do \
 		docker rm -f $$service 2>/dev/null || true; \
@@ -94,6 +96,7 @@ prune:
 	@echo "Removing data directories..."
 	@sudo rm -rf $(DATA_PATH)/* 2>/dev/null || true
 	@echo "Done! All Inception-related resources have been removed."
+
 
 art:
 	@echo	"\n"	
