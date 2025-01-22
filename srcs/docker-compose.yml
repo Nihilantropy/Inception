@@ -2,7 +2,7 @@ services:
 
   nginx:
     container_name: nginx
-    image: nginx
+    image: nginx:inception
     build:
       context: ./requirements/nginx
       dockerfile: Dockerfile
@@ -35,7 +35,7 @@ services:
 
   mariadb:
     container_name: mariadb
-    image: mariadb
+    image: mariadb:inception
     build:
       context: ./requirements/mariadb
     env_file:
@@ -54,7 +54,7 @@ services:
     
   wordpress:
     container_name: wordpress
-    image: wordpress
+    image: wordpress:inception
     env_file:
       - .env
     build:
@@ -80,7 +80,7 @@ services:
 
   adminer:
     container_name: adminer
-    image: adminer
+    image: adminer:inception
     build:
       context: ./requirements/bonus/adminer
       dockerfile: Dockerfile
@@ -101,7 +101,7 @@ services:
 
   redis:
     container_name: redis
-    image: redis
+    image: redis:inception
     build:
       context: ./requirements/bonus/redis
       dockerfile: Dockerfile
@@ -119,7 +119,7 @@ services:
 
   ftp:
     container_name: ftp
-    image: ftp
+    image: ftp:inception
     build:
       context: ./requirements/bonus/ftp
       dockerfile: Dockerfile
@@ -143,7 +143,7 @@ services:
 
   gatsby-app:
     container_name: gatsby-app
-    image: gatsby-app
+    image: gatsby-app:inception
     build: 
       context: ./requirements/bonus/gatsby-app
       dockerfile: Dockerfile
@@ -159,7 +159,7 @@ services:
 
   alien-eggs:
     container_name: alien-eggs
-    image: alien-eggs
+    image: alien-eggs:inception
     build:
       context: ./requirements/bonus/alien-eggs
       dockerfile: Dockerfile
@@ -177,7 +177,7 @@ services:
 
   cadvisor:
     container_name: cadvisor
-    image: cadvisor
+    image: cadvisor:inception
     build:
       context: ./requirements/bonus/monitoring/cadvisor
       dockerfile: Dockerfile
@@ -209,7 +209,7 @@ services:
 
   prometheus:
     container_name: prometheus
-    image: prometheus
+    image: prometheus:inception
     build:
       context: ./requirements/bonus/monitoring/prometheus
       dockerfile: Dockerfile
@@ -239,7 +239,7 @@ services:
 
   grafana:
     container_name: grafana
-    image: grafana
+    image: grafana:inception
     build:
       context: ./requirements/bonus/monitoring/grafana
       dockerfile: Dockerfile
