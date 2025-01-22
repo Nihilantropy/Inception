@@ -66,7 +66,7 @@ start:
 	@$(DOCKER_COMPOSE) -f $(COMPOSE_FILE) start
 
 down:
-	@$(DOCKER_COMPOSE) -f $(COMPOSE_FILE) down -v --rmi all
+	@$(DOCKER_COMPOSE) -f $(COMPOSE_FILE) down
 
 restart:
 	@$(DOCKER_COMPOSE) -f $(COMPOSE_FILE) restart
