@@ -42,7 +42,7 @@ RUN chmod +x /init.sh && \
 # Expose cAdvisor port
 EXPOSE 8080
 
-# Run as root initially (will be handled in entrypoint)
+# Run as root
 USER root
 
 ENTRYPOINT ["/init.sh"]
